@@ -1,0 +1,53 @@
+# As a general rule, the latest release of Keras is compatible with the latest
+# release of TensorFlow as well as the previous release of TensorFlow (in most
+# cases, it is actually compatible with several prior TF releases, but that is
+# not guaranteed).
+#
+# -- https://github.com/keras-team/keras/issues/10440#issuecomment-397428200
+
+language: python
+
+env:
+  - TENSORFLOW='tensorflow' KERAS='keras'
+
+matrix:
+  include:
+    - os: linux
+      python: 3.5
+    - os: linux
+      python: 3.6
+      ###########
+    - os: linux
+      python: 3.6
+      if: branch = master
+      env: TENSORFLOW='tensorflow<1.12'   KERAS='keras'
+    - os: linux
+      python: 3.6
+      if: branch = master
+      env: TENSORFLOW='tensorflow<1.11'   KERAS='keras'
+    - os: linux
+      python: 3.6
+      if: branch = master
+      env: TENSORFLOW='tensorflow<1.10'   KERAS='keras==2.2.2'
+    - os: linux
+      python: 3.6
+      if: branch = master
+      # env: TENSORFLOW='tensorflow<1.9'    KERAS='keras==2.2.0' # causes segmentation fault, why?
+      env: TENSORFLOW='tensorflow<1.8'    KERAS='keras==2.2.0'
+    - os: linux
+      python: 3.6
+      if: branch = master
+      env: TENSORFLOW='tensorflow<1.8'    KERAS='keras==2.1.6'
+    - os: linux
+      python: 3.6
+      if: branch = master
+      # lowest supported keras version, last tensorflow release that supports CUDA 8
+      env: TENSORFLOW='tensorflow==1.4.1' KERAS='keras==2.1.6'
+      ###########
+
+install:
+  - pip install $TENSORFLOW $KERAS
+  - pip install .
+
+script:
+  - pytest -v --durations=50
