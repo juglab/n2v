@@ -27,6 +27,6 @@ You are now ready to run Noise2Void.
 
 ## How to use it?
 Have a look at our jupyter notebook:
-* [2D example](https://github.com/juglab/Noise2Void/blob/N2V_integration/examples/noise2void/N2V_denoising2D.ipynb)
+* [2D example](https://github.com/juglab/n2v/blob/master/examples/2D/N2V_denoising2D.ipynb)
 
 
