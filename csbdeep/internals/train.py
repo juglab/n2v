@@ -109,14 +109,17 @@ class Noise2VoidDataWrapper(Sequence):
         self.shape = shape
         self.value_manipulation = value_manipulation
         self.range = np.array(self.X.shape[1:-1]) - np.array(self.shape)
-        if len(shape) == 2:
+        self.dims = len(shape)
+        self.n_chan = X.shape[-1]
+
+        if self.dims == 2:
             self.patch_sampler = self.__subpatch_sampling2D__
             self.box_size = np.round(np.sqrt(shape[0] * shape[1] / num_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords2D__
             self.rand_float = self.__rand_float_coords2D__(self.box_size)
             self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], X.shape[3]])
             self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], Y.shape[3]])
-        elif len(shape) == 3:
+        elif self.dims == 3:
             self.patch_sampler = self.__subpatch_sampling3D__
             self.box_size = np.round(np.power(shape[0] * shape[1] * shape[2] / num_pix, 1/3.0)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords3D__
@@ -144,16 +147,17 @@ class Noise2VoidDataWrapper(Sequence):
             y_val = []
             x_val = []
             for k in range(len(coords)):
-                y_val.append(self.Y_Batches[(j, *coords[k], 0)])
-                x_val.append(self.value_manipulation(self.X_Batches[j, ..., 0], coords[k]))
+                y_val.append(np.copy(self.Y_Batches[(j, *coords[k], ...)]))
+                x_val.append(self.value_manipulation(self.X_Batches[j, ...], coords[k], self.dims))
 
             self.Y_Batches[j] *= 0
 
             for k in range(len(coords)):
-                self.Y_Batches[(j, *coords[k], 0)] = y_val[k]
-                self.Y_Batches[(j, *coords[k], 1)] = 1
+                for c in range(self.n_chan):
+                    self.Y_Batches[(j, *coords[k], c)] = y_val[k][c]
+                    self.Y_Batches[(j, *coords[k], self.n_chan+c)] = 1
+                    self.X_Batches[(j, *coords[k], c)] = x_val[k][c]
 
-                self.X_Batches[(j, *coords[k])] = x_val[k]
 
         return self.X_Batches[idx], self.Y_Batches[idx]
 
