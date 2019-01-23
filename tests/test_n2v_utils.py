@@ -3,7 +3,7 @@ from csbdeep.utils import n2v_utils
 
 def test_get_subpatch():
     patch = np.arange(100)
-    patch.shape = (10,10)
+    patch.shape = (10,10,1)
 
     subpatch_target = np.array([[11, 12, 13, 14, 15],
                                 [21, 22, 23, 24, 25],
@@ -20,7 +20,7 @@ def test_get_subpatch():
     assert np.sum(subpatch_target[1:-1, 1:-1] - subpatch_test) == 0
 
     patch = np.arange(1000)
-    patch.shape = (10,10,10)
+    patch.shape = (10,10,10,1)
 
     subpatch_target = np.array([[[31,32,33],
                                  [41,42,43],
@@ -54,55 +54,57 @@ def test_random_neighbor():
 
 def test_pm_normal_neighbor_withoutCP():
     patch = np.arange(100)
-    patch.shape = (10,10)
+    patch.shape = (10,10,1)
 
     coord = np.array([2, 4])
 
+    sampler = n2v_utils.pm_normal_withoutCP(1)
+
     for i in range(1000):
-        val = n2v_utils.pm_normal_withoutCP(patch, coord)
+        val = sampler(patch, coord, len(patch.shape))
         assert 0 <= val and val < 100
 
     patch = np.arange(1000)
-    patch.shape = (10, 10, 10)
+    patch.shape = (10, 10, 10, 1)
 
     coord = np.array([2, 4, 6])
 
     for i in range(1000):
-        val = n2v_utils.pm_normal_withoutCP(patch, coord)
+        val = sampler(patch, coord, len(patch.shape))
         assert 0 <= val and val < 1000
 
 
 def test_pm_uniform_withCP():
     patch = np.arange(100)
-    patch.shape = (10, 10)
+    patch.shape = (10, 10, 1)
 
     coord = np.array([2, 4])
 
     sampler = n2v_utils.pm_uniform_withCP(3)
 
     for i in range(1000):
-        val = sampler(patch, coord)
+        val = sampler(patch, coord, len(patch.shape))
         assert 0 <= val and val < 100
 
     patch = np.arange(1000)
-    patch.shape = (10, 10, 10)
+    patch.shape = (10, 10, 10, 1)
 
     coord = np.array([4, 5, 7])
 
     for i in range(1000):
-        val = sampler(patch, coord)
+        val = sampler(patch, coord, len(patch.shape))
         assert 0 <= val and val < 1000
 
 
 def test_pm_normal_additive():
     patch = np.arange(100)
-    patch.shape = (10, 10)
+    patch.shape = (10, 10, 1)
 
     coord = np.array([2, 4])
 
     sampler = n2v_utils.pm_normal_additive(0)
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert val == patch[tuple(coord)]
 
     patch = np.arange(1000)
@@ -110,44 +112,44 @@ def test_pm_normal_additive():
 
     coord = np.array([4, 5, 7])
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert val == patch[tuple(coord)]
 
 
 def test_pm_normal_fitted():
     patch = np.arange(100)
-    patch.shape = (10, 10)
+    patch.shape = (10, 10, 1)
 
     coord = np.array([2, 4])
 
     sampler = n2v_utils.pm_normal_fitted(3)
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert isinstance(val, float)
 
     patch = np.arange(1000)
-    patch.shape = (10, 10, 10)
+    patch.shape = (10, 10, 10, 1)
 
     coord = np.array([4, 5, 7])
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert isinstance(val, float)
 
 
 def test_pm_identity():
     patch = np.arange(100)
-    patch.shape = (10, 10)
+    patch.shape = (10, 10, 1)
 
     coord = np.array([2, 4])
-    sampler = n2v_utils.pm_identity
+    sampler = n2v_utils.pm_identity(1)
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert val == 24
 
     patch = np.arange(1000)
-    patch.shape = (10, 10, 10)
+    patch.shape = (10, 10, 10, 1)
 
     coord = np.array([2, 4, 7])
 
-    val = sampler(patch, coord)
+    val = sampler(patch, coord, len(patch.shape))
     assert val == 247
