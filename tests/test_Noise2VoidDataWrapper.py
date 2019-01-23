@@ -104,8 +104,8 @@ def test_n2vWrapper_getitem():
         Y = np.random.rand(*y_shape)
         return Y
 
-    def random_neighbor_withCP_uniform(patch, coord):
-        return np.random.rand()
+    def random_neighbor_withCP_uniform(patch, coord, dims):
+        return np.random.rand(1,1)
 
     def _getitem2D(y_shape):
         Y = create_data(y_shape)
