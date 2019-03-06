@@ -239,7 +239,7 @@ def create_patches(
     patch_axes : str or None
         Axes of the extracted patches. If ``None``, will assume to be equal to that of transformed raw data.
     save_file : str or None
-        File name to save training data to disk in ``.npz`` format (see :func:`csbdeep.io.save_training_data`).
+        File name to save training data to disk in ``.npz`` format (see :func:`n2v.io.save_training_data`).
         If ``None``, data will not be saved.
     transforms : list or tuple, optional
         List of :class:`Transform` objects that apply additional transformations to the raw images.

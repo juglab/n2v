@@ -40,15 +40,15 @@ class Config(argparse.Namespace):
     n_dim : int
         Dimensionality of input images (2 or 3).
     unet_residual : bool
-        Parameter `residual` of :func:`csbdeep.nets.common_unet`. Default: ``n_channel_in == n_channel_out``
+        Parameter `residual` of :func:`n2v.nets.common_unet`. Default: ``n_channel_in == n_channel_out``
     unet_n_depth : int
-        Parameter `n_depth` of :func:`csbdeep.nets.common_unet`. Default: ``2``
+        Parameter `n_depth` of :func:`n2v.nets.common_unet`. Default: ``2``
     unet_kern_size : int
-        Parameter `kern_size` of :func:`csbdeep.nets.common_unet`. Default: ``5 if n_dim==2 else 3``
+        Parameter `kern_size` of :func:`n2v.nets.common_unet`. Default: ``5 if n_dim==2 else 3``
     unet_n_first : int
-        Parameter `n_first` of :func:`csbdeep.nets.common_unet`. Default: ``32``
+        Parameter `n_first` of :func:`n2v.nets.common_unet`. Default: ``32``
     unet_last_activation : str
-        Parameter `last_activation` of :func:`csbdeep.nets.common_unet`. Default: ``linear``
+        Parameter `last_activation` of :func:`n2v.nets.common_unet`. Default: ``linear``
     train_loss : str
         Name of training loss. Default: ``'laplace' if probabilistic else 'mae'``
     train_epochs : int
@@ -136,7 +136,7 @@ class Config(argparse.Namespace):
         self.train_batch_size      = 16
         self.train_tensorboard     = True
         self.train_checkpoint      = 'weights_best.h5'
-        self.train_reduce_lr       = {'factor': 0.5, 'patience': 10, 'min_delta': 0}
+        self.train_reduce_lr       = {'factor': 0.5, 'patience': 10}
         self.batch_norm            = False
         self.train_scheme          = 'CARE'
         self.n2v_num_pix           = 1

@@ -1,4 +1,4 @@
-from csbdeep.internals.train import  Noise2VoidDataWrapper
+from n2v.internals.train import  Noise2VoidDataWrapper
 
 import numpy as np
 

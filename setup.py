@@ -4,7 +4,7 @@ from os import path
 
 _dir = path.abspath(path.dirname(__file__))
 
-with open(path.join(_dir,'csbdeep','version.py')) as f:
+with open(path.join(_dir,'n2v','version.py')) as f:
     exec(f.read())
 
 with open(path.join(_dir,'README.md')) as f:
@@ -51,7 +51,7 @@ setup(name='n2v',
 
       entry_points={
           'console_scripts': [
-              'care_predict = csbdeep.scripts.care_predict:main'
+              'care_predict = n2v.scripts.care_predict:main'
           ]
       }
       )

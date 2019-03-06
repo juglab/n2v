@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals, absolute_import, divisi
 import numpy as np
 from scipy.ndimage.interpolation import zoom
 
-from csbdeep.internals.probability import ProbabilisticPrediction
+from n2v.internals.probability import ProbabilisticPrediction
 from .care_standard import CARE
 from ..internals.predict import predict_direct
 from ..data import PercentileNormalizer, PadAndCropResizer
@@ -13,7 +13,7 @@ from ..utils import _raise, axes_check_and_normalize
 class IsotropicCARE(CARE):
     """CARE network for isotropic image reconstruction.
 
-    Extends :class:`csbdeep.models.CARE` by replacing prediction
+    Extends :class:`n2v.models.CARE` by replacing prediction
     (:func:`predict`, :func:`predict_probabilistic`) to do isotropic reconstruction.
     """
 

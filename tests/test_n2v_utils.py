@@ -1,5 +1,5 @@
 import numpy as np
-from csbdeep.utils import n2v_utils
+from n2v.utils import n2v_utils
 
 def test_get_subpatch():
     patch = np.arange(100)

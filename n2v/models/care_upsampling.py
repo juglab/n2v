@@ -11,7 +11,7 @@ from ..utils import _raise, axes_dict
 class UpsamplingCARE(CARE):
     """CARE network for combined image restoration and upsampling of one dimension.
 
-    Extends :class:`csbdeep.models.CARE` by replacing prediction
+    Extends :class:`n2v.models.CARE` by replacing prediction
     (:func:`predict`, :func:`predict_probabilistic`) to first upsample Z before image restoration.
     """
 

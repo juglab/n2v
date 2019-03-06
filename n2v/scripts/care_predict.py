@@ -7,9 +7,9 @@ from pprint import pprint
 import numpy as np
 from tqdm import tqdm
 
-from csbdeep.io import save_tiff_imagej_compatible
-from csbdeep.utils import _raise, axes_check_and_normalize
-from csbdeep.utils.six import Path
+from n2v.io import save_tiff_imagej_compatible
+from n2v.utils import _raise, axes_check_and_normalize
+from n2v.utils.six import Path
 
 
 def str2bool(v):
@@ -94,14 +94,14 @@ def main():
     # delay imports after checking to all required arguments are provided
     from tifffile import imread, imsave
     import keras.backend as K
-    from csbdeep.models import CARE
-    from csbdeep.data import PercentileNormalizer
+    from n2v.models import CARE
+    from n2v.data import PercentileNormalizer
     sys.stdout.flush()
     sys.stderr.flush()
 
     # limit gpu memory
     if args.gpu_memory_limit is not None:
-        from csbdeep.utils.tf import limit_gpu_memory
+        from n2v.utils.tf import limit_gpu_memory
         limit_gpu_memory(args.gpu_memory_limit)
 
     # create CARE model and load weights, create normalizer
