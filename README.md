@@ -27,5 +27,6 @@ You are now ready to run Noise2Void.
 
 ## How to use it?
 Have a look at our jupyter notebook:
-* [2D example](https://github.com/juglab/n2v/blob/master/examples/2D/N2V_denoising2D.ipynb)
+* [2D example simulated fluorescence](https://github.com/juglab/n2v/blob/master/examples/2D/N2V_denoising2D.ipynb)
+* [2D example SEM data](https://github.com/juglab/n2v/blob/renaming/examples/2D/N2V_denoising2D-SEM.ipynb)
 * [3D example](https://github.com/juglab/n2v/blob/master/examples/3D/N2V_denoising3D.ipynb)

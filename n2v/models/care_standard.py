@@ -8,7 +8,7 @@ import tensorflow as tf
 from six import string_types
 from functools import wraps
 
-from csbdeep.internals.probability import ProbabilisticPrediction
+from n2v.internals.probability import ProbabilisticPrediction
 from .config import Config
 
 from ..utils import _raise, load_json, save_json, axes_check_and_normalize, axes_dict, move_image_axes
@@ -26,13 +26,13 @@ from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted,
 class CARE(object):
     """Standard CARE network for image restoration and enhancement.
 
-    Uses a convolutional neural network created by :func:`csbdeep.internals.nets.common_unet`.
+    Uses a convolutional neural network created by :func:`n2v.internals.nets.common_unet`.
     Note that isotropic reconstruction and manifold extraction/projection are not supported here
-    (see :class:`csbdeep.models.IsotropicCARE` ).
+    (see :class:`n2v.models.IsotropicCARE` ).
 
     Parameters
     ----------
-    config : :class:`csbdeep.models.Config` or None
+    config : :class:`n2v.models.Config` or None
         Valid configuration of CARE network (see :func:`Config.is_valid`).
         Will be saved to disk as JSON (``config.json``).
         If set to ``None``, will be loaded from disk (must exist).
@@ -55,7 +55,7 @@ class CARE(object):
 
     Attributes
     ----------
-    config : :class:`csbdeep.models.Config`
+    config : :class:`n2v.models.Config`
         Configuration of CARE network, as provided during instantiation.
     keras_model : `Keras model <https://keras.io/getting-started/functional-api-guide/>`_
         Keras neural network model.
@@ -166,7 +166,7 @@ class CARE(object):
     def prepare_for_training(self, optimizer=None, **kwargs):
         """Prepare for neural network training.
 
-        Calls :func:`csbdeep.internals.train.prepare_model` and creates
+        Calls :func:`n2v.internals.train.prepare_model` and creates
         `Keras Callbacks <https://keras.io/callbacks/>`_ to be used for training.
 
         Note that this method will be implicitly called once by :func:`train`
@@ -178,7 +178,7 @@ class CARE(object):
             Instance of a `Keras Optimizer <https://keras.io/optimizers/>`_ to be used for training.
             If ``None`` (default), uses ``Adam`` with the learning rate specified in ``config``.
         kwargs : dict
-            Additional arguments for :func:`csbdeep.internals.train.prepare_model`.
+            Additional arguments for :func:`n2v.internals.train.prepare_model`.
 
         """
         if optimizer is None:
@@ -285,7 +285,7 @@ class CARE(object):
 
     @suppress_without_basedir(warn=True)
     def export_TF(self):
-        """Export neural network via :func:`csbdeep.utils.tf.export_SavedModel`."""
+        """Export neural network via :func:`n2v.utils.tf.export_SavedModel`."""
         fout = self.logdir / 'TF_SavedModel.zip'
         meta = {
             'type':          self.__class__.__name__,
@@ -308,9 +308,9 @@ class CARE(object):
             Raw input image
         axes : str
             Axes of the input ``img``.
-        normalizer : :class:`csbdeep.data.Normalizer` or None
+        normalizer : :class:`n2v.data.Normalizer` or None
             Normalization of input image before prediction and (potentially) transformation back after prediction.
-        resizer : :class:`csbdeep.data.Resizer` or None
+        resizer : :class:`n2v.data.Resizer` or None
             If necessary, input image is resized to enable neural network prediction and result is (possibly)
             resized to yield original image size.
         n_tiles : iterable or None
@@ -341,7 +341,7 @@ class CARE(object):
 
         Returns
         -------
-        :class:`csbdeep.internals.probability.ProbabilisticPrediction`
+        :class:`n2v.internals.probability.ProbabilisticPrediction`
             Returns the probability distribution of the restored image.
 
         Raises

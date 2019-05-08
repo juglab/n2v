@@ -5,9 +5,9 @@ from six.moves import range, zip, map, reduce, filter
 import numpy as np
 import pytest
 from tifffile import imread, imsave
-from csbdeep.data import RawData, create_patches
-from csbdeep.io import load_training_data
-from csbdeep.utils import Path, move_image_axes, backend_channels_last
+from n2v.data import RawData, create_patches
+from n2v.io import load_training_data
+from n2v.utils import Path, move_image_axes, backend_channels_last
 
 
 

@@ -105,7 +105,7 @@ class PercentileNormalizer(Normalizer):
     dtype : type
         Data type after normalization.
     kwargs : dict
-        Keyword arguments for :func:`csbdeep.utils.normalize_mi_ma`.
+        Keyword arguments for :func:`n2v.utils.normalize_mi_ma`.
     """
 
     def __init__(self, pmin=2, pmax=99.8, do_after=True, dtype=np.float32, **kwargs):
@@ -120,7 +120,7 @@ class PercentileNormalizer(Normalizer):
     def before(self, img, axes):
         """Percentile-based normalization of raw input image.
 
-        See :func:`csbdeep.predict.Normalizer.before` for parameter descriptions.
+        See :func:`n2v.predict.Normalizer.before` for parameter descriptions.
         Note that percentiles are computed individually for each channel (if present in `axes`).
         """
         len(axes) == img.ndim or _raise(ValueError())
@@ -133,7 +133,7 @@ class PercentileNormalizer(Normalizer):
     def after(self, mean, scale):
         """Undo percentile-based normalization to map restored image to similar range as input image.
 
-        See :func:`csbdeep.predict.Normalizer.before` for parameter descriptions.
+        See :func:`n2v.predict.Normalizer.before` for parameter descriptions.
 
         Raises
         ------
@@ -259,7 +259,7 @@ class PadAndCropResizer(Resizer):
     def before(self, x, div_n, exclude):
         """Pad input image.
 
-        See :func:`csbdeep.predict.Resizer.before` for parameter descriptions.
+        See :func:`n2v.predict.Resizer.before` for parameter descriptions.
         """
         def _split(v):
             a = v // 2
@@ -275,7 +275,7 @@ class PadAndCropResizer(Resizer):
     def after(self, x, exclude):
         """Crop restored image to retain size of input image.
 
-        See :func:`csbdeep.predict.Resizer.after` for parameter descriptions.
+        See :func:`n2v.predict.Resizer.after` for parameter descriptions.
         """
         crop = [slice(p[0], -p[1] if p[1]>0 else None) for p in self.pad]
         for i in self._normalize_exclude(exclude, x.ndim):

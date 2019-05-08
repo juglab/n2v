@@ -6,14 +6,14 @@ from itertools import product
 # import warnings
 import numpy as np
 import pytest
-from csbdeep.data import NoNormalizer, NoResizer
-from csbdeep.internals.predict import tile_overlap
+from n2v.data import NoNormalizer, NoResizer
+from n2v.internals.predict import tile_overlap
 from keras import backend as K
 
-from csbdeep.internals.nets import receptive_field_unet
-from csbdeep.models import Config, CARE
-from csbdeep.utils import axes_dict
-from csbdeep.utils.six import FileNotFoundError
+from n2v.internals.nets import receptive_field_unet
+from n2v.models import Config, CARE
+from n2v.utils import axes_dict
+from n2v.utils.six import FileNotFoundError
 
 
 
