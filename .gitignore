@@ -9,11 +9,15 @@ __pycache__/
 build/
 dist/
 docs/build/
+examples/**/models/
 
+*.png
 *.npz
+*.npy
 *.tif*
 *.hdf5
 *.h5
 *.zip
 *.tfevents.*
 config.json
+

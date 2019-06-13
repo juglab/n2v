@@ -13,11 +13,11 @@ with open(path.join(_dir,'README.md')) as f:
 
 setup(name='n2v',
       version=__version__,
-      description='Noise2Void allows the training of a denoising CNN from individual noisy images. The implementation is based on CSBDEEP',
+      description='Noise2Void allows the training of a denoising CNN from individual noisy images. This implementation'
+                  'extends CSBDeep.',
       long_description=long_description,
-#      long_description_content_type='text/markdown',
       url='https://github.com/juglab/n2v/',
-      author='Tim-Oliver Buchholz, Alexander Krull, Uwe Schmidt, Martin Weigert',
+      author='Tim-Oliver Buchholz, Alexander Krull',
       author_email='tibuch@mpi-cbg.de, krull@mpi-cbg.de',
       license='BSD 3-Clause License',
       packages=find_packages(),
@@ -47,11 +47,7 @@ setup(name='n2v',
           "tqdm",
           "pathlib2;python_version<'3'",
           "backports.tempfile;python_version<'3.4'",
-      ],
-
-      entry_points={
-          'console_scripts': [
-              'care_predict = n2v.scripts.care_predict:main'
-          ]
-      }
+          "csbdeep",
+          "Pillow"
+      ]
       )

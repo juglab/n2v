@@ -1,4 +1,4 @@
-from n2v.internals.train import  Noise2VoidDataWrapper
+from n2v.internals.N2V_DataWrapper import  N2V_DataWrapper
 
 import numpy as np
 
@@ -15,7 +15,7 @@ def test_subpatch_sampling():
     def _sample2D(in_shape, out_shape, seed):
         X, Y, X_Batches, Y_Batches, indices = create_data(in_shape, out_shape)
         np.random.seed(seed)
-        Noise2VoidDataWrapper.__subpatch_sampling2D__(X, Y, X_Batches, Y_Batches, indices,
+        N2V_DataWrapper.__subpatch_sampling2D__(X, Y, X_Batches, Y_Batches, indices,
                                                       range=in_shape[1:3]-out_shape[1:3], shape=out_shape[1:3])
 
         assert ([*X_Batches.shape] == out_shape).all()
@@ -37,7 +37,7 @@ def test_subpatch_sampling():
     def _sample3D(in_shape, out_shape, seed):
         X, Y, X_Batches, Y_Batches, indices = create_data(in_shape, out_shape)
         np.random.seed(seed)
-        Noise2VoidDataWrapper.__subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices,
+        N2V_DataWrapper.__subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices,
                                                       range=in_shape[1:4]-out_shape[1:4], shape=out_shape[1:4])
 
         assert ([*X_Batches.shape] == out_shape).all()
@@ -72,17 +72,17 @@ def test_random_float_coords():
     np.random.seed(1)
     coords = (np.random.rand() * boxsize, np.random.rand() * boxsize)
     np.random.seed(1)
-    assert next(Noise2VoidDataWrapper.__rand_float_coords2D__(boxsize)) == coords
+    assert next(N2V_DataWrapper.__rand_float_coords2D__(boxsize)) == coords
 
     boxsize = 3
     np.random.seed(1)
     coords = (np.random.rand() * boxsize, np.random.rand() * boxsize, np.random.rand() * boxsize)
     np.random.seed(1)
-    assert next(Noise2VoidDataWrapper.__rand_float_coords3D__(boxsize)) == coords
+    assert next(N2V_DataWrapper.__rand_float_coords3D__(boxsize)) == coords
 
 
 def test_coord_gen():
-    coord_gen = Noise2VoidDataWrapper.__rand_float_coords2D__(13)
+    coord_gen = N2V_DataWrapper.__rand_float_coords2D__(13)
     shape = [128, 128]
     for i in range(100):
         coords = next(coord_gen)
@@ -90,7 +90,7 @@ def test_coord_gen():
         assert coords[1] < shape[1]
 
 
-    coord_gen = Noise2VoidDataWrapper.__rand_float_coords3D__(4)
+    coord_gen = N2V_DataWrapper.__rand_float_coords3D__(4)
     shape = [55, 55, 55]
     for i in range(100):
         coords = next(coord_gen)
@@ -109,29 +109,39 @@ def test_n2vWrapper_getitem():
 
     def _getitem2D(y_shape):
         Y = create_data(y_shape)
-        X = Y[:,:,:,0][:,:,:,np.newaxis]
+        n_chan = y_shape[-1]//2
+        if n_chan == 1:
+           X = Y[:,:,:,0][:,:,:,np.newaxis]
+        else:
+            X = Y[:,:,:,:n_chan]
         val_manipulator = random_neighbor_withCP_uniform
-        dw = Noise2VoidDataWrapper(X, Y, 4, num_pix=16, shape=(32, 32), value_manipulation=val_manipulator)
+        dw = N2V_DataWrapper(X, Y, 4, num_pix=16, shape=(32, 32), value_manipulation=val_manipulator)
 
         x_batch, y_batch = dw.__getitem__(0)
-        assert x_batch.shape == (4, 32, 32, 1)
-        assert y_batch.shape == (4, 32, 32, 2)
-        assert np.sum(y_batch[:,:,:,1]) == 16*4
+        assert x_batch.shape == (4, 32, 32, int(n_chan))
+        assert y_batch.shape == (4, 32, 32, int(2*n_chan))
+        assert np.sum(y_batch[:,:,:,n_chan:]) == 16*4*n_chan
 
-        assert np.sum(X[y_batch[:,:,:,1] == 1] - Y[y_batch[:,:,:,1] == 1][:,0]) <= 10e-12
+        assert np.sum(X[:,:32,:32,:n_chan]*y_batch[:,:,:,n_chan:] - Y[:,:32,:32,:n_chan]*y_batch[:,:,:,n_chan:]) <= 10e-12
 
     def _getitem3D(y_shape):
         Y = create_data(y_shape)
+        n_chan = y_shape[-1]//2
         X = Y[:,:,:,:,0][:,:,:,:,np.newaxis]
         val_manipulator = random_neighbor_withCP_uniform
-        dw = Noise2VoidDataWrapper(X, Y, 4, num_pix=64, shape=(32, 32, 32), value_manipulation=val_manipulator)
+        dw = N2V_DataWrapper(X, Y, 4, num_pix=64, shape=(32, 32, 32), value_manipulation=val_manipulator)
 
         x_batch, y_batch = dw.__getitem__(0)
         assert x_batch.shape == (4, 32, 32, 32, 1)
         assert y_batch.shape == (4, 32, 32, 32, 2)
         assert np.sum(y_batch[:,:,:,:,1]) == 64*4
 
-        assert np.sum(X[y_batch[:,:,:,:,1] == 1] - Y[y_batch[:,:,:,:,1] == 1][:,0]) <= 10e-12
+        assert np.sum(X[:,:32,:32,:32,:n_chan]*y_batch[:,:,:,:,n_chan:] - Y[:,:32,:32,:32,:n_chan]*y_batch[:,:,:,:,n_chan:]) <= 10e-12
 
     _getitem2D(np.array([4, 32, 32, 2]))
+    _getitem2D(np.array([4, 64, 64, 2]))
+    _getitem2D(np.array([4, 44, 55, 2]))
+    _getitem2D(np.array([4, 45, 41, 4]))
     _getitem3D(np.array([4, 32, 32, 32, 2]))
+    _getitem3D(np.array([4, 64, 64, 64, 2]))
+    _getitem3D(np.array([4, 33, 44, 55, 2]))
