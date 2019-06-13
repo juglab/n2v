@@ -1,5 +1,5 @@
 import numpy as np
-from ..internals.train import  Noise2VoidDataWrapper as dw
+from ..internals.N2V_DataWrapper import N2V_DataWrapper as dw
 
 
 def get_subpatch(patch, coord, local_sub_patch_radius):
@@ -16,7 +16,7 @@ def get_subpatch(patch, coord, local_sub_patch_radius):
 
     slices = [ slice(s, e) for s, e in zip(start, end)]
 
-    return patch[slices]
+    return patch[tuple(slices)]
 
 
 def random_neighbor(shape, coord):

@@ -39,7 +39,5 @@ del K
 
 
 # imports
-from .config import Config
-from .care_standard import CARE
-from .care_upsampling import UpsamplingCARE
-from .care_isotropic import IsotropicCARE
+from .n2v_config import N2VConfig
+from .n2v_standard import N2V

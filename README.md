@@ -14,7 +14,15 @@ Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) (
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
 We have tested Noise2Void on LinuxMint 18.3 using python 3.6 and tensorflow-gpu 1.12.0.
-Once tensorflow in installed, you can clone the repository:
+Once tensorflow is installed, you can install N2V with one of the following two options:
+
+#### PIP
+```
+pip install n2v
+```
+
+#### Git-Clone
+Or clone the repository:
 ```
 git clone https://github.com/juglab/n2v.git
 ```
