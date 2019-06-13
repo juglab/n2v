@@ -14,27 +14,41 @@ Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) (
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
 We have tested Noise2Void on LinuxMint 18.3 using python 3.6 and tensorflow-gpu 1.12.0.
-Once tensorflow is installed, you can install N2V with one of the following two options:
+
+#### If you start from scratch...
+We recommend using [conda](https://docs.conda.io/en/latest/miniconda.html).
+If you do not yet have a strong opinion, just use it too!
+
+After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and CuDNN installed on your machine (_Note:_ Macs are not supported, and if you sit on a Windows machine all this might also require some modifications.):
+
+```
+$ conda create -n 'n2v' python=3.6
+$ source activate n2v
+$ conda install tensorflow-gpu
+$ pip install jupyter
+```
+
+Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
 
 #### PIP
 ```
-pip install n2v
+$ pip install n2v
 ```
 
 #### Git-Clone
 Or clone the repository:
 ```
-git clone https://github.com/juglab/n2v.git
+$ git clone https://github.com/juglab/n2v.git
 ```
 Change into its directory and install it:
 ```
-cd n2v
-pip install -e .
+$ cd n2v
+$ pip install -e .
 ```
 You are now ready to run Noise2Void.
 
 ## How to use it?
 Have a look at our jupyter notebook:
-* [2D example simulated fluorescence](https://github.com/juglab/n2v/blob/master/examples/2D/N2V_denoising2D.ipynb)
-* [2D example SEM data](https://github.com/juglab/n2v/blob/renaming/examples/2D/N2V_denoising2D-SEM.ipynb)
-* [3D example](https://github.com/juglab/n2v/blob/master/examples/3D/N2V_denoising3D.ipynb)
+* [2D example SEM](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_SEM)
+* [2D example RGB](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_RGB)
+* [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
