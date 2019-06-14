@@ -5,7 +5,8 @@ import argparse
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--baseDir", help="directory in which all your network will live", default='models')
 parser.add_argument("--name", help="name of your network", default='N2V3D')
-parser.add_argument("--testData", help="The path to your test data")
+parser.add_argument("--dataPath", help="The path to your data")
+parser.add_argument("--fileName", help="name of your data file", default="*.tif")
 parser.add_argument("--output", help="The path to your data to be saved", default='predictions.tif')
 parser.add_argument("--dims", help="dimensions of your data", default='YX')
 
@@ -17,6 +18,7 @@ args = parser.parse_args()
 
 # We import all our dependencies.
 from n2v.models import N2V
+from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
 import numpy as np
 from matplotlib import pyplot as plt
 from tifffile import imread
@@ -28,12 +30,17 @@ model_name = 'n2v_3D'
 basedir = 'models'
 model = N2V(config=None, name=model_name, basedir=basedir)
 
-
-# Load the test data.
-img = imread(args.testData)
-
-# Denoise the image.
-pred = model.predict( img, axes=args.dims )
-print(pred.shape)
-
-imwrite(args.output,pred.astype(np.float32))
+datagen = N2V_DataGenerator()
+imgs = datagen.load_imgs_from_directory(directory = args.dataPath, dims=args.dims, filter=args.fileName)
+for i, img in enumerate(imgs):
+    img_=img[0,...]
+    if len(img_.shape)>len(args.dims):
+        img_=img_[...,0]
+    print("denoising image "+str(i) +" of "+str(len(imgs)))
+    # Denoise the image.
+    pred = model.predict( img_, axes=args.dims )
+    print(pred.shape)
+    filename=args.output
+    if len(imgs) > 1:
+        filename=str(i)+_+filename
+    imwrite(filename,pred.astype(np.float32))
