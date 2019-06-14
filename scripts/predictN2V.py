@@ -9,6 +9,7 @@ parser.add_argument("--dataPath", help="The path to your data")
 parser.add_argument("--fileName", help="name of your data file", default="*.tif")
 parser.add_argument("--output", help="The path to your data to be saved", default='predictions.tif')
 parser.add_argument("--dims", help="dimensions of your data", default='YX')
+parser.add_argument("--tile", help="will cut your image [TILE] times in every dimension to make it fit GPU memory", default=1, type=int)
 
 if len(sys.argv)==1:
     parser.print_help(sys.stderr)
@@ -30,6 +31,15 @@ model_name = 'n2v_3D'
 basedir = 'models'
 model = N2V(config=None, name=model_name, basedir=basedir)
 
+
+tiles = (args.tile, args.tile)
+
+if 'Z' in args.dims or 'C' in args.dims:
+    tiles = (1, args.tile, args.tile)
+
+if 'Z' in args.dims and 'C' in args.dims:
+    tiles = (1, args.tile, args.tile, 1)
+
 datagen = N2V_DataGenerator()
 imgs = datagen.load_imgs_from_directory(directory = args.dataPath, dims=args.dims, filter=args.fileName)
 for i, img in enumerate(imgs):
@@ -38,7 +48,7 @@ for i, img in enumerate(imgs):
         img_=img_[...,0]
     print("denoising image "+str(i) +" of "+str(len(imgs)))
     # Denoise the image.
-    pred = model.predict( img_, axes=args.dims )
+    pred = model.predict( img_, axes=args.dims, n_tiles=tiles)
     print(pred.shape)
     filename=args.output
     if len(imgs) > 1:
