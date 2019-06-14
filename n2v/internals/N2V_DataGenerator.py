@@ -50,8 +50,10 @@ class N2V_DataGenerator():
             elif b == 'C':
                 move_axis_to += tuple([-1])
             elif b in 'XYZ':
-                move_axis_to += tuple([net_axes.index(b)])
-
+                if 'T' in dims:
+                    move_axis_to += tuple([net_axes.index(b)+1])
+                else:
+                    move_axis_to += tuple([net_axes.index(b)])
         imgs = []
         for f in files:
             if f.endswith('.tif') or f.endswith('.tiff'):
@@ -68,7 +70,7 @@ class N2V_DataGenerator():
 
             img = np.moveaxis(img, move_axis_from, move_axis_to)
 
-            if not ('T' in dims):
+            if not ('T' in dims):    
                 img = img[np.newaxis]
 
             if not ('C' in dims):
