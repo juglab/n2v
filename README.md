@@ -23,7 +23,7 @@ After installing Miniconda, the following lines might are likely the easiest way
 ```
 $ conda create -n 'n2v' python=3.6
 $ source activate n2v
-$ conda install tensorflow-gpu
+$ conda install tensorflow-gpu==1.12
 $ pip install jupyter
 ```
 
