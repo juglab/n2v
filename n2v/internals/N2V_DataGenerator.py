@@ -99,7 +99,7 @@ class N2V_DataGenerator():
         images : list(array(float))
                  A list of the read tif-files. The images have dimensionality 'SZYXC' or 'SYXC'
         """
-        files = glob(join(directory, filter))
+        files = sorted( glob(join(directory, filter)) )
         return self.load_imgs(files, dims=dims)
 
 

@@ -17,6 +17,8 @@ if len(sys.argv)==1:
 
 args = parser.parse_args()
 
+assert (not 'T' in args.dims) or (args.dims[0]=='T')
+
 # We import all our dependencies.
 from n2v.models import N2V
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
@@ -42,15 +44,32 @@ if 'Z' in args.dims and 'C' in args.dims:
 
 datagen = N2V_DataGenerator()
 imgs = datagen.load_imgs_from_directory(directory = args.dataPath, dims=args.dims, filter=args.fileName)
+
 for i, img in enumerate(imgs):
-    img_=img[0,...]
-    if len(img_.shape)>len(args.dims):
-        img_=img_[...,0]
-    print("denoising image "+str(i) +" of "+str(len(imgs)))
-    # Denoise the image.
-    pred = model.predict( img_, axes=args.dims, n_tiles=tiles)
+    print("img.shape",img.shape)
+
+    if len(img.shape)>len(args.dims):
+        img_=img[...,0]
+    else:
+        img_=img
+
+    # if we have a time dimension we process the images one by one
+    if args.dims[0]=='T':
+        pred=img_.copy()
+        myDims=args.dims[1:]	
+
+
+        for j in range(img_.shape[0]):
+            print("img_[j].shape", img_[j].shape)
+            pred[j] = model.predict( img_[j], axes=myDims, n_tiles=tiles)
+    else:
+
+        print("denoising image "+str(i) +" of "+str(len(imgs)))
+        # Denoise the image.
+        pred = model.predict( img_, axes=args.dims, n_tiles=tiles)
+    
     print(pred.shape)
     filename=args.output
     if len(imgs) > 1:
-        filename=str(i)+_+filename
+        filename=filename+'_'+str(i).zfill(4) +'.tif'
     imwrite(filename,pred.astype(np.float32))
