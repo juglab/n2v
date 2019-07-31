@@ -29,8 +29,8 @@ from tifffile import imwrite
 
 
 # A previously trained model is loaded by creating a new N2V-object without providing a 'config'.
-model_name = 'n2v_3D'
-basedir = 'models'
+model_name = args.name
+basedir = args.baseDir
 model = N2V(config=None, name=model_name, basedir=basedir)
 
 

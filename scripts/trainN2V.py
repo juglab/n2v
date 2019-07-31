@@ -88,9 +88,9 @@ vars(config)
 
 
 # a name used to identify the model
-model_name = 'n2v_3D'
+model_name = args.name
 # the base directory in which our model will live
-basedir = 'models'
+basedir = args.baseDir
 # We are now creating our network model.
 model = N2V(config=config, name=model_name, basedir=basedir)
 
