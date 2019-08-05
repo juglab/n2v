@@ -48,10 +48,9 @@ imgs = datagen.load_imgs_from_directory(directory = args.dataPath, dims=args.dim
 for i, img in enumerate(imgs):
     print("img.shape",img.shape)
 
-    if len(img.shape)>len(args.dims):
+    img_=img
+    if not 'C' in args.dims :
         img_=img[...,0]
-    else:
-        img_=img
 
     # if we have a time dimension we process the images one by one
     if args.dims[0]=='T':
@@ -63,9 +62,10 @@ for i, img in enumerate(imgs):
             print("img_[j].shape", img_[j].shape)
             pred[j] = model.predict( img_[j], axes=myDims, n_tiles=tiles)
     else:
-
+        img_=img_[0,...]
         print("denoising image "+str(i) +" of "+str(len(imgs)))
         # Denoise the image.
+        print(args.dims)
         pred = model.predict( img_, axes=args.dims, n_tiles=tiles)
     
     print(pred.shape)
