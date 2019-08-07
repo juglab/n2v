@@ -101,7 +101,7 @@ class N2V_DataGenerator():
         """
 
         files = glob(join(directory, filter))
-	      files.sort()
+        files.sort()
         return self.load_imgs(files, dims=dims)
 
 

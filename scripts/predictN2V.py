@@ -1,13 +1,14 @@
 import os
 import sys
 import argparse
+from glob import glob
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--baseDir", help="directory in which all your network will live", default='models')
 parser.add_argument("--name", help="name of your network", default='N2V3D')
 parser.add_argument("--dataPath", help="The path to your data")
 parser.add_argument("--fileName", help="name of your data file", default="*.tif")
-parser.add_argument("--output", help="The path to your data to be saved", default='predictions.tif')
+parser.add_argument("--output", help="The path to which your data is to be saved", default='.')
 parser.add_argument("--dims", help="dimensions of your data", default='YX')
 parser.add_argument("--tile", help="will cut your image [TILE] times in every dimension to make it fit GPU memory", default=1, type=int)
 
@@ -45,9 +46,10 @@ if 'Z' in args.dims and 'C' in args.dims:
 datagen = N2V_DataGenerator()
 imgs = datagen.load_imgs_from_directory(directory = args.dataPath, dims=args.dims, filter=args.fileName)
 
-for i, img in enumerate(imgs):
-    print("img.shape",img.shape)
+files = glob(os.path.join(args.dataPath, args.fileName))
+files.sort()
 
+for i, img in enumerate(imgs):
     img_=img
     if not 'C' in args.dims :
         img_=img[...,0]
@@ -59,17 +61,16 @@ for i, img in enumerate(imgs):
 
 
         for j in range(img_.shape[0]):
-            print("img_[j].shape", img_[j].shape)
             pred[j] = model.predict( img_[j], axes=myDims, n_tiles=tiles)
     else:
         img_=img_[0,...]
-        print("denoising image "+str(i) +" of "+str(len(imgs)))
+        print("denoising image "+str(i+1) +" of "+str(len(imgs)))
         # Denoise the image.
         print(args.dims)
         pred = model.predict( img_, axes=args.dims, n_tiles=tiles)
     
     print(pred.shape)
-    filename=args.output
-    if len(imgs) > 1:
-        filename=filename+'_'+str(i).zfill(4) +'.tif'
+    outpath=args.output
+    filename=os.path.basename(files[i]).replace('.tif','_N2V.tif')
+    outpath=os.path.join(outpath,filename)
     imwrite(filename,pred.astype(np.float32))
