@@ -37,6 +37,10 @@ setup(name='n2v',
           'Programming Language :: Python :: 3.6',
       ],
 
+      scripts=['scripts/trainN2V.py',
+          'scripts/predictN2V.py'
+      ],
+
       install_requires=[
           "numpy",
           "scipy",
