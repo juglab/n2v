@@ -7,7 +7,7 @@ from glob import glob
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--baseDir", help="directory in which all your network will live", default='models')
-parser.add_argument("--name", help="name of your network", default='N2V3D')
+parser.add_argument("--name", help="name of your network", default='N2V2D')
 parser.add_argument("--dataPath", help="The path to your data")
 parser.add_argument("--fileName", help="name of your data file", default="*.tif")
 parser.add_argument("--output", help="The path to which your data is to be saved", default='.')
