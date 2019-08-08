@@ -6,21 +6,21 @@ import argparse
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 parser.add_argument("--baseDir", help="base directory in which your network will live", default='models')
-parser.add_argument("--name", help="name of your network", default='N2V3D')
+parser.add_argument("--name", help="name of your network", default='N2V')
 parser.add_argument("--dataPath", help="The path to your training data")
 parser.add_argument("--fileName", help="name of your training data file", default="*.tif")
-parser.add_argument("--validationFraction", help="Fraction of data you want to use for validation (percent)", default=10.0, type=float)
+parser.add_argument("--validationFraction", help="Fraction of data you want to use for validation (percent)", default=5.0, type=float)
 parser.add_argument("--dims", help="dimensions of your data, can include: X,Y,Z,C (channel), T (time)", default='YX')
 parser.add_argument("--patchSizeXY", help="XY-size of your training patches", default=64, type=int)
 parser.add_argument("--patchSizeZ", help="Z-size of your training patches", default=64, type=int)
 parser.add_argument("--epochs", help="number of training epochs", default=100, type=int)
-parser.add_argument("--stepsPerEpoch", help="number training steps per epoch", default=5, type=int)
+parser.add_argument("--stepsPerEpoch", help="number training steps per epoch", default=400, type=int)
 parser.add_argument("--batchSize", help="size of your training batches", default=64, type=int)
 parser.add_argument("--netDepth", help="depth of your U-Net", default=2, type=int)
 parser.add_argument("--netKernelSize", help="Size of conv. kernels in first layer", default=3, type=int)
 parser.add_argument("--n2vPercPix", help="percentage of pixels to manipulated by N2V", default=1.6, type=float)
 parser.add_argument("--learningRate", help="initial learning rate", default=0.0004, type=float)
-
+parser.add_argument("--unet_n_first", help="number of feature channels in the first u-net layer", default=32, type=int)
 
 if len(sys.argv)==1:
     parser.print_help(sys.stderr)
@@ -83,6 +83,7 @@ config = N2VConfig(X, unet_kern_size=args.netKernelSize,
                    train_batch_size=args.batchSize, n2v_perc_pix=args.n2vPercPix, n2v_patch_shape=pshape,
                    n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5, train_learning_rate=args.learningRate,
                    unet_n_depth=args.netDepth,
+                   unet_n_first=args.unet_n_first
                    )
 
 # Let's look at the parameters stored in the config-object.
