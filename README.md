@@ -51,3 +51,14 @@ Have a look at our jupyter notebook:
 * [2D example SEM](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_SEM)
 * [2D example RGB](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_RGB)
 * [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
+
+## How to cite:
+```
+@inproceedings{krull2019noise2void,
+  title={Noise2void-learning denoising from single noisy images},
+  author={Krull, Alexander and Buchholz, Tim-Oliver and Jug, Florian},
+  booktitle={Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition},
+  pages={2129--2137},
+  year={2019}
+}
+```
