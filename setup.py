@@ -51,7 +51,7 @@ setup(name='n2v',
           "tqdm",
           "pathlib2;python_version<'3'",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep==0.3.0",
+          "csbdeep==0.4.0",
           "Pillow"
       ]
       )
