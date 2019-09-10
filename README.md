@@ -12,10 +12,10 @@ Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) (
 
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
-We have tested Noise2Void on LinuxMint 18.3 using python 3.6 and tensorflow-gpu 1.12.0.
+We have tested Noise2Void on LinuxMint 19 and Ubuntu 18.0 using python 3.6 and 3.7 and tensorflow-gpu 1.12.0 and 1.14.0.
 
 #### If you start from scratch...
-We recommend using [conda](https://docs.conda.io/en/latest/miniconda.html).
+We recommend using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 If you do not yet have a strong opinion, just use it too!
 
 After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and CuDNN installed on your machine (_Note:_ Macs are not supported, and if you sit on a Windows machine all this might also require some modifications.):
@@ -23,7 +23,7 @@ After installing Miniconda, the following lines might are likely the easiest way
 ```
 $ conda create -n 'n2v' python=3.6
 $ source activate n2v
-$ conda install tensorflow-gpu==1.12
+$ conda install tensorflow-gpu==1.14
 $ pip install jupyter
 ```
 
@@ -35,11 +35,13 @@ $ pip install n2v
 ```
 
 #### Option 2: Git-Clone and install from sources
-Or clone the repository:
+This option is ideal if you want to edit the code. Clone the repository:
+
 ```
 $ git clone https://github.com/juglab/n2v.git
 ```
 Change into its directory and install it:
+
 ```
 $ cd n2v
 $ pip install -e .

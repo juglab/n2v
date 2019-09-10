@@ -1,5 +1,5 @@
 from csbdeep.models import CARE
-from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict
+from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
 from csbdeep.internals import nets
 from csbdeep.internals.predict import Progress
 
@@ -64,25 +64,32 @@ class N2V(CARE):
         """
 
     def __init__(self, config, name=None, basedir='.'):
-        """See class docstring"""
-        config is None or isinstance(config, N2VConfig) or _raise(ValueError('Invalid configuration: %s' % str(config)))
+        """See class docstring."""
+
+        config is None or isinstance(config,self._config_class) or _raise (
+            ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (type(config).__name__, self._config_class.__name__))
+        )
         if config is not None and not config.is_valid():
             invalid_attr = config.is_valid(True)[1]
             raise ValueError('Invalid configuration attributes: ' + ', '.join(invalid_attr))
-        (not (config is None and basedir is None)) or _raise(ValueError())
+        (not (config is None and basedir is None)) or _raise(ValueError("No config provided and cannot be loaded from disk since basedir=None."))
 
-        name is None or isinstance(name, string_types) or _raise(ValueError())
-        basedir is None or isinstance(basedir, (string_types, Path)) or _raise(ValueError())
+        name is None or (isinstance(name,string_types) and len(name)>0) or _raise(ValueError("No valid name: '%s'" % str(name)))
+        basedir is None or isinstance(basedir,(string_types,Path)) or _raise(ValueError("No valid basedir: '%s'" % str(basedir)))
         self.config = config
         self.name = name if name is not None else datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")
         self.basedir = Path(basedir) if basedir is not None else None
+        if config is not None:
+            # config was provided -> update before it is saved to disk
+            self._update_and_check_config()
         self._set_logdir()
+        if config is None:
+            # config was loaded from disk -> update it after loading
+            self._update_and_check_config()
         self._model_prepared = False
         self.keras_model = self._build()
         if config is None:
             self._find_and_load_weights()
-        else:
-            config.probabilistic = False
 
 
     def _build(self):
@@ -205,8 +212,8 @@ class N2V(CARE):
                                                     self.config.train_batch_size, int(train_num_pix/100 * self.config.n2v_perc_pix),
                                                     self.config.n2v_patch_shape, manipulator)
 
-        # validation_Y is also validation_X plus a concatinated masking channel.
-        # To speed things up, we precomupte the masking vo the validation data.
+        # validation_Y is also validation_X plus a concatenated masking channel.
+        # To speed things up, we precompute the masking vo the validation data.
         validation_Y = np.concatenate((validation_X, np.zeros(validation_X.shape, dtype=validation_X.dtype)), axis=axes.index('C'))
         n2v_utils.manipulate_val_data(validation_X, validation_Y,
                                                         num_pix=int(val_num_pix/100 * self.config.n2v_perc_pix),
@@ -272,13 +279,16 @@ class N2V(CARE):
                             if epoch % self.freq == 0:
                                 # TODO: implement batched calls to sess.run
                                 # (current call will likely go OOM on GPU)
+                                tensors = self.model.inputs + self.gt_outputs + self.model.sample_weights
                                 if self.model.uses_learning_phase:
-                                    cut_v_data = len(self.model.inputs)
-                                    val_data = [self.validation_data[0][:self.n_images]] + [0]
-                                    tensors = self.model.inputs + [K.learning_phase()]
+                                    tensors += [K.learning_phase()]
+                                    val_data = list(v[:self.n_images] for v in self.validation_data[:-1])
+                                    val_data += self.validation_data[-1:]
                                 else:
                                     val_data = list(v[:self.n_images] for v in self.validation_data)
-                                    tensors = self.model.inputs
+                                # GIT issue 20: We need to remove the masking component from the validation data to prevent crash.
+                                end_index = (val_data[1].shape)[-1]//2
+                                val_data[1] = val_data[1][...,:end_index]
                                 feed_dict = dict(zip(tensors, val_data))
                                 result = self.sess.run([self.merged], feed_dict=feed_dict)
                                 summary_str = result[0]
@@ -365,3 +375,26 @@ class N2V(CARE):
         pred = self._predict_mean_and_scale(normalized, axes=axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
 
         return self.__denormalize__(pred, mean, std)
+    
+    def _set_logdir(self):
+        self.logdir = self.basedir / self.name
+
+        config_file =  self.logdir / 'config.json'
+        if self.config is None:
+            if config_file.exists():
+                config_dict = load_json(str(config_file))
+                self.config = self._config_class(np.array([]), **config_dict)
+                if not self.config.is_valid():
+                    invalid_attr = self.config.is_valid(True)[1]
+                    raise ValueError('Invalid attributes in loaded config: ' + ', '.join(invalid_attr))
+            else:
+                raise FileNotFoundError("config file doesn't exist: %s" % str(config_file.resolve()))
+        else:
+            if self.logdir.exists():
+                warnings.warn('output path for model already exists, files may be overwritten: %s' % str(self.logdir.resolve()))
+            self.logdir.mkdir(parents=True, exist_ok=True)
+            save_json(vars(self.config), str(config_file))
+    
+    @property
+    def _config_class(self):
+        return N2VConfig
