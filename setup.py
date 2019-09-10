@@ -16,6 +16,7 @@ setup(name='n2v',
       description='Noise2Void allows the training of a denoising CNN from individual noisy images. This implementation'
                   'extends CSBDeep.',
       long_description=long_description,
+      long_description_content_type='text/markdown',
       url='https://github.com/juglab/n2v/',
       author='Tim-Oliver Buchholz, Alexander Krull',
       author_email='tibuch@mpi-cbg.de, krull@mpi-cbg.de',
