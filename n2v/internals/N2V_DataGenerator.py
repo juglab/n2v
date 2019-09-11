@@ -105,7 +105,7 @@ class N2V_DataGenerator():
         return self.load_imgs(files, dims=dims)
 
 
-    def generate_patches_from_list(self, data, num_patches_per_img=None, shape=(256, 256), augment=True):
+    def generate_patches_from_list(self, data, num_patches_per_img=None, shape=(256, 256), augment=True, shuffle=False):
         """
         Extracts patches from 'list_data', which is a list of images, and returns them in a 'numpy-array'. The images
         can have different dimensionality.
@@ -121,6 +121,8 @@ class N2V_DataGenerator():
                               Shape of the extracted patches.
         augment             : bool, optional(default=True)
                               Rotate the patches in XY-Plane. This only works if the patches are square in XY.
+        shuffle             : bool, optional(default=False)
+                              Shuffles extracted patches across all given images (data).
 
         Returns
         -------
@@ -133,11 +135,15 @@ class N2V_DataGenerator():
             patches.append(p)
 
         patches = np.concatenate(patches, axis=0)
+
+        if shuffle:
+            np.random.shuffle(patches)
+
         return patches
 
     def generate_patches(self, data, num_patches=None, shape=(256, 256), augment=True):
         """
-        Extracts normalized patches from 'data'. The patches can be augmented, which means they get rotated three times
+        Extracts patches from 'data'. The patches can be augmented, which means they get rotated three times
         in XY-Plane and flipped along the X-Axis. Augmentation leads to an eight-fold increase in training data.
 
         Parameters
@@ -155,7 +161,8 @@ class N2V_DataGenerator():
         Returns
         -------
         patches : array(float)
-                  Numpy-Array with the patches. The dimensions are 'SZYXC' or 'SYXC'
+                  Numpy-Array containing all patches (randomly shuffled along S-dimension).
+                  The dimensions are 'SZYXC' or 'SYXC'
         """
 
         patches = self.__extract_patches__(data, num_patches=num_patches, shape=shape, n_dims=len(data.shape)-2)
