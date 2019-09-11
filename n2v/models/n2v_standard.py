@@ -1,7 +1,6 @@
 from csbdeep.models import CARE
 from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
 from csbdeep.internals import nets
-from csbdeep.internals.predict import Progress
 
 from six import string_types
 from csbdeep.utils.six import Path, FileNotFoundError
@@ -10,7 +9,6 @@ from csbdeep.data import PadAndCropResizer
 from keras.callbacks import TerminateOnNaN
 import tensorflow as tf
 from keras import backend as K
-from os.path import join
 
 import datetime
 import warnings
@@ -201,10 +199,11 @@ class N2V(CARE):
 
         manipulator = eval('pm_{0}({1})'.format(self.config.n2v_manipulator, str(self.config.n2v_neighborhood_radius)))
 
-        mean, std = float(self.config.mean), float(self.config.std)
+        means = np.array([float(mean) for mean in self.config.means], ndmin=len(X.shape), dtype=np.float32)
+        stds = np.array([float(std) for std in self.config.stds], ndmin=len(X.shape), dtype=np.float32)
 
-        X = self.__normalize__(X, mean, std)
-        validation_X = self.__normalize__(validation_X, mean, std)
+        X = self.__normalize__(X, means, stds)
+        validation_X = self.__normalize__(validation_X, means, stds)
 
         # Here we prepare the Noise2Void data. Our input is the noisy data X and as target we take X concatenated with
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
@@ -339,12 +338,12 @@ class N2V(CARE):
         return callbacks
 
 
-    def __normalize__(self, data, mean, std):
-        return (data - mean)/std
+    def __normalize__(self, data, means, stds):
+        return (data - means) / stds
 
 
-    def __denormalize__(self, data, mean, std):
-        return (data * std) + mean
+    def __denormalize__(self, data, means, stds):
+        return (data * stds) + means
 
 
     def predict(self, img, axes, resizer=PadAndCropResizer(), n_tiles=None):
@@ -368,13 +367,14 @@ class N2V(CARE):
         image : array(float)
                 The restored image.
         """
-        mean, std = float(self.config.mean), float(self.config.std)
+        means = np.array([float(mean) for mean in self.config.means], ndmin=len(img.shape), dtype=np.float32)
+        stds = np.array([float(std) for std in self.config.stds], ndmin=len(img.shape), dtype=np.float32)
 
-        normalized = self.__normalize__(img, mean, std)
+        normalized = self.__normalize__(img, means, stds)
 
         pred = self._predict_mean_and_scale(normalized, axes=axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
 
-        return self.__denormalize__(pred, mean, std)
+        return self.__denormalize__(pred, means, stds)
     
     def _set_logdir(self):
         self.logdir = self.basedir / self.name

@@ -79,9 +79,12 @@ class N2VConfig(argparse.Namespace):
             n_dim = len(X.shape) - 2
             n_channel_in = X.shape[-1]
             n_channel_out = n_channel_in
-            mean = np.mean(X)
-            std = np.std(X)
-    
+
+            means, stds = [], []
+            for i in range(n_channel_in):
+                means.append(np.mean(X[...,i]))
+                stds.append(np.std(X[...,i]))
+
             if n_dim == 2:
                 axes = 'SYXC'
             elif n_dim == 3:
@@ -110,8 +113,8 @@ class N2VConfig(argparse.Namespace):
                     axes = 'C'+axes
     
             # normalization parameters
-            self.mean                  = str(mean)
-            self.std                   = str(std)
+            self.means                 = [str(el) for el in means]
+            self.stds                  = [str(el) for el in stds]
             # directly set by parameters
             self.n_dim                 = n_dim
             self.axes                  = axes
@@ -172,8 +175,12 @@ class N2VConfig(argparse.Namespace):
             )
 
         ok = {}
-        ok['mean'] = np.isscalar(float(self.mean))
-        ok['std'] = np.isscalar(float(self.std)) and float(self.std) > 0.0
+        ok['means'] = True
+        for mean in self.means:
+            ok['means'] &= np.isscalar(float(mean))
+        ok['stds'] = True
+        for std in self.stds:
+            ok['stds'] &= np.isscalar(float(std))  and float(std) > 0.0
         ok['n_dim'] = self.n_dim in (2,3)
         try:
             axes_check_and_normalize(self.axes,self.n_dim+1,disallowed='S')
