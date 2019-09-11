@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 from ..internals.N2V_DataWrapper import N2V_DataWrapper as dw
 
 
@@ -83,7 +84,7 @@ def manipulate_val_data(X_val, Y_val, num_pix=64, shape=(64, 64), value_manipula
 
     n_chan = X_val.shape[-1]
 
-    for j in range(X_val.shape[0]):
+    for j in tqdm(range(X_val.shape[0]), desc='Preparing validation data: '):
         coords = get_stratified_coords(rand_float, box_size=box_size,
                                             shape=np.array(X_val.shape)[1:-1])
         y_val = []
