@@ -370,11 +370,25 @@ class N2V(CARE):
         means = np.array([float(mean) for mean in self.config.means], ndmin=len(img.shape), dtype=np.float32)
         stds = np.array([float(std) for std in self.config.stds], ndmin=len(img.shape), dtype=np.float32)
 
-        normalized = self.__normalize__(img, means, stds)
+        new_axes = axes
+        if 'C' in axes:
+            new_axes = axes.replace('C', '') + 'C'
+            normalized = self.__normalize__(np.moveaxis(img, axes.index('C'), -1), means, stds)
+        else:
+            normalized = self.__normalize__(img[..., np.newaxis], means, stds)
+            new_axes = new_axes + 'C'
+            n_tiles += (1,)
 
-        pred = self._predict_mean_and_scale(normalized, axes=axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
+        pred = self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
 
-        return self.__denormalize__(pred, means, stds)
+        pred = self.__denormalize__(pred, means, stds)
+
+        if 'C' in axes:
+            pred = np.moveaxis(pred, -1, axes.index('C'))
+        else:
+            pred = pred[...,0]
+
+        return pred
     
     def _set_logdir(self):
         self.logdir = self.basedir / self.name
