@@ -21,6 +21,11 @@ img = imread('data/longBeach.png')[...,:3]
 # Here we process the image.
 pred = model.predict(img, axes='YXC')
 
+# Channel first test
+img = np.moveaxis(img, -1, 0)
+pred = model.predict(img, axes='CYX')
+assert pred.shape == img.shape
+
 # Let's look at the results.
 #plt.figure(figsize=(30,30))
 # We show the noisy input...
