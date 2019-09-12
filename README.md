@@ -1,3 +1,4 @@
+[![](https://travis-ci.com/juglab/n2v.svg?branch=master)](https://travis-ci.com/juglab/n2v)
 [![N2V_video](img/n2v_vimeo.png)](https://vimeo.com/305045007)
 
 # Noise2Void - Learning Denoising from Single Noisy Images
