@@ -29,12 +29,12 @@ $ pip install jupyter
 
 Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
 
-#### Option 1: PIP
+#### Option 1: PIP (current stable release)
 ```
 $ pip install n2v
 ```
 
-#### Option 2: Git-Clone and install from sources
+#### Option 2: Git-Clone and install from sources (current master-branch version)
 This option is ideal if you want to edit the code. Clone the repository:
 
 ```
