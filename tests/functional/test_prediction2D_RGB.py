@@ -21,10 +21,8 @@ img = imread('data/longBeach.png')[...,:3]
 # Here we process the image.
 pred = model.predict(img, axes='YXC')
 
-# Channel first test
-img = np.moveaxis(img, -1, 0)
-pred = model.predict(img, axes='CYX')
-assert pred.shape == img.shape
+from matplotlib.image import imsave
+imsave('models/n2v_2D_RGB/pred_longBeach.png', np.clip(pred,0.0,1.0))
 
 # Let's look at the results.
 #plt.figure(figsize=(30,30))
@@ -38,5 +36,7 @@ assert pred.shape == img.shape
 #plt.title('Prediction')
 #plt.show()
 
-from matplotlib.image import imsave
-imsave('models/n2v_2D_RGB/pred_longBeach.png', np.clip(pred,0.0,1.0))
+# Channel first test
+img = np.moveaxis(img, -1, 0)
+pred = model.predict(img, axes='CYX')
+assert pred.shape == img.shape
