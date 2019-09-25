@@ -377,7 +377,8 @@ class N2V(CARE):
         else:
             normalized = self.__normalize__(img[..., np.newaxis], means, stds)
             new_axes = new_axes + 'C'
-            n_tiles += (1,)
+            if (n_tiles):
+                n_tiles += (1,)
 
         pred = self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
 
