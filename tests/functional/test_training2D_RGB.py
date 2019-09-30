@@ -62,8 +62,8 @@ X_val = patches[5000:]
 
 # You can increase "train_steps_per_epoch" to get even better results at the price of longer computation
 config = N2VConfig(X, unet_kern_size=3,
-            unet_n_first=2, unet_n_depth=2, train_steps_per_epoch=2, train_epochs=2, train_loss='mse',
-            batch_norm=True, train_batch_size=32, n2v_perc_pix=5, n2v_patch_shape=(64, 64),
+            unet_n_first=64, unet_n_depth=3, train_steps_per_epoch=5, train_epochs=25, train_loss='mse',
+            batch_norm=True, train_batch_size=128, n2v_perc_pix=5, n2v_patch_shape=(64, 64),
             n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5)
 vars(config)
 

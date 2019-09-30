@@ -31,4 +31,3 @@ install:
 
 script:
   - cd tests; pytest -v -s test*.py 
-  - cd functional; ./test_training2D_RGB.py; ./test_prediction2D_RGB.py; ./test_training3D.py; ./test_prediction3D.py
