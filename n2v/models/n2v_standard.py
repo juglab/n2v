@@ -299,7 +299,7 @@ class N2V(CARE):
                                 continue
                             summary = tf.Summary()
                             summary_value = summary.value.add()
-                            summary_value.simple_value = value.item()
+                            summary_value.simple_value = value
                             summary_value.tag = name
                             self.writer.add_summary(summary, epoch)
 
