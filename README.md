@@ -24,10 +24,11 @@ After installing Miniconda, the following lines might are likely the easiest way
 ```
 $ conda create -n 'n2v' python=3.6
 $ source activate n2v
-$ conda install tensorflow-gpu==1.14
+$ conda install tensorflow-gpu keras
 $ pip install jupyter
 ```
 
+Note: it is very important that the version of keras be 2.24 or 2.2.5, hence the explicit installation above.
 Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
 
 #### Option 1: PIP (current stable release)
