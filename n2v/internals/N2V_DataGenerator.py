@@ -120,7 +120,7 @@ class N2V_DataGenerator():
         shape               : tuple(int), optional(default=(256, 256))
                               Shape of the extracted patches.
         augment             : bool, optional(default=True)
-                              Rotate the patches in XY-Plane. This only works if the patches are square in XY.
+                              Rotate the patches in XY-Plane and flip them along X-Axis. This only works if the patches are square in XY.
         shuffle             : bool, optional(default=False)
                               Shuffles extracted patches across all given images (data).
 
@@ -156,7 +156,7 @@ class N2V_DataGenerator():
         shape       : tuple(int), optional(default=(256, 256))
                       Shape of the extracted patches.
         augment     : bool, optional(default=True)
-                      Rotate the patches in XY-Plane. This only works if the patches are square in XY.
+                      Rotate the patches in XY-Plane and flip them along X-Axis. This only works if the patches are square in XY.
 
         Returns
         -------
