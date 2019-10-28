@@ -12,6 +12,7 @@ from keras import backend as K
 
 import datetime
 import warnings
+import multiprocessing
 
 from .n2v_config import N2VConfig
 from ..utils import n2v_utils
@@ -221,7 +222,11 @@ class N2V(CARE):
 
         history = self.keras_model.fit_generator(generator=training_data, validation_data=(validation_X, validation_Y),
                                                  epochs=epochs, steps_per_epoch=steps_per_epoch,
-                                                 callbacks=self.callbacks, verbose=1)
+                                                 callbacks=self.callbacks, verbose=1,
+                                                 max_queue_size= 20,
+                                                 use_multiprocessing=True,
+                                                 workers=min(12, multiprocessing.cpu_count()),
+                                                 shuffle=True)
 
         if self.basedir is not None:
             self.keras_model.save_weights(str(self.logdir / 'weights_last.h5'))
