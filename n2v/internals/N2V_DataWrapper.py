@@ -28,7 +28,7 @@ class N2V_DataWrapper(Sequence):
                  value_manipulation=None):
         self.X, self.Y = X, Y
         self.batch_size = batch_size
-        self.perm = np.random.permutation(len(self.X))
+        self.indices = np.arange(len(self.X))
         self.shape = shape
         self.value_manipulation = value_manipulation
         self.range = np.array(self.X.shape[1:-1]) - np.array(self.shape)
@@ -40,30 +40,27 @@ class N2V_DataWrapper(Sequence):
             self.box_size = np.round(np.sqrt(shape[0] * shape[1] / num_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords2D__
             self.rand_float = self.__rand_float_coords2D__(self.box_size)
-            self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], X.shape[3]])
-            self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], Y.shape[3]])
+            self.X_Batches = np.zeros([self.batch_size, shape[0], shape[1], X.shape[3]], dtype=np.float32)
+            self.Y_Batches = np.zeros([self.batch_size, shape[0], shape[1], Y.shape[3]], dtype=np.float32)
         elif self.dims == 3:
             self.patch_sampler = self.__subpatch_sampling3D__
-            self.box_size = np.round(np.power(shape[0] * shape[1] * shape[2] / num_pix, 1/3.0)).astype(np.int)
+            self.box_size = np.round(np.power(shape[0] * shape[1] * shape[2] / num_pix, 1 / 3.0)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords3D__
             self.rand_float = self.__rand_float_coords3D__(self.box_size)
-            self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], shape[2], X.shape[4]])
-            self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], shape[2], Y.shape[4]])
+            self.X_Batches = np.zeros([self.batch_size, shape[0], shape[1], shape[2], X.shape[4]], dtype=np.float32)
+            self.Y_Batches = np.zeros([self.batch_size, shape[0], shape[1], shape[2], Y.shape[4]], dtype=np.float32)
         else:
             raise Exception('Dimensionality not supported.')
 
     def __len__(self):
         return int(np.ceil(len(self.X) / float(self.batch_size)))
 
-    def on_epoch_end(self):
-        self.perm = np.random.permutation(len(self.X))
 
     def __getitem__(self, i):
-        idx = slice(i * self.batch_size, (i + 1) * self.batch_size)
-        idx = self.perm[idx]
+        idx = self.indices[slice(i * self.batch_size, (i + 1) * self.batch_size)]
         self.patch_sampler(self.X, self.Y, self.X_Batches, self.Y_Batches, idx, self.range, self.shape)
 
-        for j in idx:
+        for j in range(self.X_Batches.shape[0]):
             for c in range(self.n_chan):
                 coords = self.get_stratified_coords(self.rand_float, box_size=self.box_size,
                                                     shape=np.array(self.X_Batches.shape)[1:-1])
@@ -72,35 +69,35 @@ class N2V_DataWrapper(Sequence):
                 x_val = []
                 for k in range(len(coords)):
                     y_val.append(np.copy(self.Y_Batches[(j, *coords[k], ..., c)]))
-                    x_val.append(self.value_manipulation(self.X_Batches[j, ..., c][...,np.newaxis], coords[k], self.dims))
+                    x_val.append(
+                        self.value_manipulation(self.X_Batches[j, ..., c][..., np.newaxis], coords[k], self.dims))
 
-                self.Y_Batches[j,...,c] *= 0
-                self.Y_Batches[j,...,self.n_chan+c] *= 0
+                self.Y_Batches[j, ..., c] *= 0
+                self.Y_Batches[j, ..., self.n_chan + c] *= 0
 
                 for k in range(len(coords)):
                     self.Y_Batches[(j, *coords[k], c)] = y_val[k]
-                    self.Y_Batches[(j, *coords[k], self.n_chan+c)] = 1
+                    self.Y_Batches[(j, *coords[k], self.n_chan + c)] = 1
                     self.X_Batches[(j, *coords[k], c)] = x_val[k]
 
-
-        return self.X_Batches[idx], self.Y_Batches[idx]
+        return self.X_Batches, self.Y_Batches
 
     @staticmethod
     def __subpatch_sampling2D__(X, Y, X_Batches, Y_Batches, indices, range, shape):
-        for j in indices:
+        for i, j in enumerate(indices):
             y_start = np.random.randint(0, range[0] + 1)
             x_start = np.random.randint(0, range[1] + 1)
-            X_Batches[j] = X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
-            Y_Batches[j] = Y[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
+            X_Batches[i] = X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
+            Y_Batches[i] = Y[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
 
     @staticmethod
     def __subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices, range, shape):
-        for j in indices:
+        for i, j in enumerate(indices):
             z_start = np.random.randint(0, range[0] + 1)
             y_start = np.random.randint(0, range[1] + 1)
             x_start = np.random.randint(0, range[2] + 1)
-            X_Batches[j] = X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
-            Y_Batches[j] = Y[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
+            X_Batches[i] = X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
+            Y_Batches[i] = Y[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
 
     @staticmethod
     def __get_stratified_coords2D__(coord_gen, box_size, shape):

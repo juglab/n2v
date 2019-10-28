@@ -7,7 +7,7 @@ def test_subpatch_sampling():
     def create_data(in_shape, out_shape):
         X, Y = np.random.rand(*in_shape), np.random.rand(*in_shape)
         X_Batches, Y_Batches = np.zeros(out_shape), np.zeros(out_shape)
-        indices = np.arange(in_shape[0])
+        indices = np.random.permutation(X_Batches.shape[0])
         np.random.shuffle(indices)
 
         return X, Y, X_Batches, Y_Batches, indices[:in_shape[0]//2]
@@ -22,17 +22,12 @@ def test_subpatch_sampling():
         np.random.seed(seed)
         range_y = in_shape[1] - out_shape[1]
         range_x = in_shape[2] - out_shape[2]
-        for j in indices:
-            assert np.sum(X_Batches[j]) != 0
-            assert np.sum(Y_Batches[j]) != 0
+        for i,j in enumerate(indices):
+            assert np.sum(X_Batches[i]) != 0
+            assert np.sum(Y_Batches[i]) != 0
             y_start = np.random.randint(0, range_y + 1)
             x_start = np.random.randint(0, range_x + 1)
-            assert np.sum(X_Batches[j] - X[j, y_start:y_start+out_shape[1], x_start:x_start+out_shape[2]]) == 0
-
-        for j in range(in_shape[0]):
-            if j not in indices:
-                assert np.sum(X_Batches[j]) == 0
-                assert np.sum(Y_Batches[j]) == 0
+            assert np.sum(X_Batches[i] - X[j, y_start:y_start+out_shape[1], x_start:x_start+out_shape[2]]) == 0
 
     def _sample3D(in_shape, out_shape, seed):
         X, Y, X_Batches, Y_Batches, indices = create_data(in_shape, out_shape)
@@ -45,18 +40,14 @@ def test_subpatch_sampling():
         range_z = in_shape[1] - out_shape[1]
         range_y = in_shape[2] - out_shape[2]
         range_x = in_shape[3] - out_shape[3]
-        for j in indices:
-            assert np.sum(X_Batches[j]) != 0
-            assert np.sum(Y_Batches[j]) != 0
+        for i,j in enumerate(indices):
+            assert np.sum(X_Batches[i]) != 0
+            assert np.sum(Y_Batches[i]) != 0
             z_start = np.random.randint(0, range_z + 1)
             y_start = np.random.randint(0, range_y + 1)
             x_start = np.random.randint(0, range_x + 1)
-            assert np.sum(X_Batches[j] - X[j, z_start:z_start+out_shape[1], y_start:y_start+out_shape[2], x_start:x_start+out_shape[3]]) == 0
+            assert np.sum(X_Batches[i] - X[j, z_start:z_start+out_shape[1], y_start:y_start+out_shape[2], x_start:x_start+out_shape[3]]) == 0
 
-        for j in range(in_shape[0]):
-            if j not in indices:
-                assert np.sum(X_Batches[j]) == 0
-                assert np.sum(Y_Batches[j]) == 0
 
     _sample2D(np.array([20, 64, 64, 2]), np.array([20, 32, 32, 2]), 1)
     _sample2D(np.array([10, 25, 25, 1]), np.array([10, 12, 12, 1]), 2)
