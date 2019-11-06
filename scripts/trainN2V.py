@@ -21,6 +21,7 @@ parser.add_argument("--netKernelSize", help="Size of conv. kernels in first laye
 parser.add_argument("--n2vPercPix", help="percentage of pixels to manipulated by N2V", default=1.6, type=float)
 parser.add_argument("--learningRate", help="initial learning rate", default=0.0004, type=float)
 parser.add_argument("--unet_n_first", help="number of feature channels in the first u-net layer", default=32, type=int)
+parser.add_argument("--noAugment",  action='store_true', help="do not rotate and flip training patches")
 
 if len(sys.argv)==1:
     parser.print_help(sys.stderr)
@@ -50,6 +51,8 @@ print('everything imported')
 
 print("args",str(args.name))
 
+print('augment',(not args.noAugment))
+
 
 
 ####################################################
@@ -67,8 +70,7 @@ if 'Z' in args.dims:
     pshape=(args.patchSizeZ, args.patchSizeXY, args.patchSizeXY)
 
 print(pshape)
-patches = datagen.generate_patches_from_list(imgs[:1], shape=pshape)
-print(patches.shape)
+patches = datagen.generate_patches_from_list(imgs[:1], shape=pshape, augment=(not args.noAugment))
 
 # The patches are non-overlapping, so we can split them into train and validation data.
 frac= int( (len(patches))*float(args.validationFraction)/100.0)
