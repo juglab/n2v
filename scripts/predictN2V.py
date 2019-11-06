@@ -14,6 +14,7 @@ parser.add_argument("--fileName", help="name of your data file", default="*.tif"
 parser.add_argument("--output", help="The path to which your data is to be saved", default='.')
 parser.add_argument("--dims", help="dimensions of your data", default='YX')
 parser.add_argument("--tile", help="will cut your image [TILE] times in every dimension to make it fit GPU memory", default=1, type=int)
+parser.add_argument("--lastModel",  action='store_true', help="load least model instead of best")
 
 if len(sys.argv)==1:
     parser.print_help(sys.stderr)
@@ -37,7 +38,11 @@ from tifffile import imread
 model_name = args.name
 basedir = args.baseDir
 model = N2V(config=None, name=model_name, basedir=basedir)
-
+if args.lastModel:
+    model.load_weights('weights_last.h5')
+    print('loading last model')
+else:
+    print('loading best model')
 
 tiles = (args.tile, args.tile)
 
