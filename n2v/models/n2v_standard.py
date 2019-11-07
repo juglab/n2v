@@ -380,9 +380,7 @@ class N2V(CARE):
             normalized = self.__normalize__(np.moveaxis(img, axes.index('C'), -1), means, stds)
         else:
             normalized = self.__normalize__(img[..., np.newaxis], means, stds)
-            new_axes = new_axes + 'C'
-            if (n_tiles):
-                n_tiles += (1,)
+            normalized = normalized[..., 0]
 
         pred = self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer, n_tiles=n_tiles)[0]
 
@@ -390,8 +388,6 @@ class N2V(CARE):
 
         if 'C' in axes:
             pred = np.moveaxis(pred, -1, axes.index('C'))
-        else:
-            pred = pred[...,0]
 
         return pred
     
