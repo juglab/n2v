@@ -28,7 +28,7 @@ $ conda install tensorflow-gpu keras
 $ pip install jupyter
 ```
 
-Note: it is very important that the version of keras be 2.24 or 2.2.5, hence the explicit installation above.
+Note: it is very important that the version of keras be 2.2.4 or 2.2.5, hence the explicit installation above.
 Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
 
 #### Option 1: PIP (current stable release)
