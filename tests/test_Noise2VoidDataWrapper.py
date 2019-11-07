@@ -15,7 +15,7 @@ def test_subpatch_sampling():
     def _sample2D(in_shape, out_shape, seed):
         X, Y, X_Batches, Y_Batches, indices = create_data(in_shape, out_shape)
         np.random.seed(seed)
-        N2V_DataWrapper.__subpatch_sampling2D__(X, Y, X_Batches, Y_Batches, indices,
+        N2V_DataWrapper.__subpatch_sampling2D__(X, X_Batches, indices,
                                                       range=in_shape[1:3]-out_shape[1:3], shape=out_shape[1:3])
 
         assert ([*X_Batches.shape] == out_shape).all()
@@ -24,7 +24,6 @@ def test_subpatch_sampling():
         range_x = in_shape[2] - out_shape[2]
         for j in indices:
             assert np.sum(X_Batches[j]) != 0
-            assert np.sum(Y_Batches[j]) != 0
             y_start = np.random.randint(0, range_y + 1)
             x_start = np.random.randint(0, range_x + 1)
             assert np.sum(X_Batches[j] - X[j, y_start:y_start+out_shape[1], x_start:x_start+out_shape[2]]) == 0
@@ -32,12 +31,11 @@ def test_subpatch_sampling():
         for j in range(in_shape[0]):
             if j not in indices:
                 assert np.sum(X_Batches[j]) == 0
-                assert np.sum(Y_Batches[j]) == 0
 
     def _sample3D(in_shape, out_shape, seed):
         X, Y, X_Batches, Y_Batches, indices = create_data(in_shape, out_shape)
         np.random.seed(seed)
-        N2V_DataWrapper.__subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices,
+        N2V_DataWrapper.__subpatch_sampling3D__(X, X_Batches, indices,
                                                       range=in_shape[1:4]-out_shape[1:4], shape=out_shape[1:4])
 
         assert ([*X_Batches.shape] == out_shape).all()
@@ -47,7 +45,6 @@ def test_subpatch_sampling():
         range_x = in_shape[3] - out_shape[3]
         for j in indices:
             assert np.sum(X_Batches[j]) != 0
-            assert np.sum(Y_Batches[j]) != 0
             z_start = np.random.randint(0, range_z + 1)
             y_start = np.random.randint(0, range_y + 1)
             x_start = np.random.randint(0, range_x + 1)
@@ -56,7 +53,6 @@ def test_subpatch_sampling():
         for j in range(in_shape[0]):
             if j not in indices:
                 assert np.sum(X_Batches[j]) == 0
-                assert np.sum(Y_Batches[j]) == 0
 
     _sample2D(np.array([20, 64, 64, 2]), np.array([20, 32, 32, 2]), 1)
     _sample2D(np.array([10, 25, 25, 1]), np.array([10, 12, 12, 1]), 2)

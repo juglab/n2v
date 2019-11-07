@@ -54,76 +54,75 @@ class N2V_DataWrapper(Sequence):
 
         self.X_Batches = np.zeros((self.X.shape[0], *self.shape, self.n_chan), dtype=np.float32)
         self.Y_Batches = np.zeros((self.Y.shape[0], *self.shape, 2*self.n_chan), dtype=np.float32)
+
     def __len__(self):
         return int(np.ceil(len(self.X) / float(self.batch_size)))
 
     def on_epoch_end(self):
         self.perm = np.random.permutation(len(self.X))
+        self.X_Batches *= 0
+        self.Y_Batches *= 0
 
     def __getitem__(self, i):
         idx = slice(i * self.batch_size, (i + 1) * self.batch_size)
         idx = self.perm[idx]
-        self.patch_sampler(self.X, self.Y, self.X_Batches, self.Y_Batches, idx, self.range, self.shape)
+        self.patch_sampler(self.X, self.X_Batches, indices=idx, range=self.range, shape=self.shape)
 
-        for j in idx:
-            for c in range(self.n_chan):
+        for c in range(self.n_chan):
+            for j in idx:
                 coords = self.get_stratified_coords(self.rand_float, box_size=self.box_size,
-                                                    shape=np.array(self.X_Batches.shape)[1:-1])
+                                                    shape=self.shape)
 
-                y_val = []
-                x_val = []
-                for k in range(len(coords)):
-                    y_val.append(np.copy(self.Y_Batches[(j, *coords[k], ..., c)]))
-                    x_val.append(self.value_manipulation(self.X_Batches[j, ..., c][...,np.newaxis], coords[k], self.dims))
+                indexing = (j,) + coords + (c,)
+                indexing_mask = (j,) + coords + (c + self.n_chan, )
+                y_val = self.X_Batches[indexing]
+                x_val = self.value_manipulation(self.X_Batches[j, ..., c], coords, self.dims)
 
-                self.Y_Batches[j,...,c] *= 0
-                self.Y_Batches[j,...,self.n_chan+c] *= 0
-
-                for k in range(len(coords)):
-                    self.Y_Batches[(j, *coords[k], c)] = y_val[k]
-                    self.Y_Batches[(j, *coords[k], self.n_chan+c)] = 1
-                    self.X_Batches[(j, *coords[k], c)] = x_val[k]
-
+                self.Y_Batches[indexing] = y_val
+                self.Y_Batches[indexing_mask] = 1
+                self.X_Batches[indexing] = x_val
 
         return self.X_Batches[idx], self.Y_Batches[idx]
 
     @staticmethod
-    def __subpatch_sampling2D__(X, Y, X_Batches, Y_Batches, indices, range, shape):
+    def __subpatch_sampling2D__(X, X_Batches, indices, range, shape):
         for j in indices:
             y_start = np.random.randint(0, range[0] + 1)
             x_start = np.random.randint(0, range[1] + 1)
-            X_Batches[j] = X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
-            Y_Batches[j] = Y[j, y_start:y_start + shape[0], x_start:x_start + shape[1]]
+            X_Batches[j] = np.copy(X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]])
 
     @staticmethod
-    def __subpatch_sampling3D__(X, Y, X_Batches, Y_Batches, indices, range, shape):
+    def __subpatch_sampling3D__(X, X_Batches, indices, range, shape):
         for j in indices:
             z_start = np.random.randint(0, range[0] + 1)
             y_start = np.random.randint(0, range[1] + 1)
             x_start = np.random.randint(0, range[2] + 1)
-            X_Batches[j] = X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
-            Y_Batches[j] = Y[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]]
+            X_Batches[j] = np.copy(X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]])
 
     @staticmethod
     def __get_stratified_coords2D__(coord_gen, box_size, shape):
-        coords = []
         box_count_y = int(np.ceil(shape[0] / box_size))
         box_count_x = int(np.ceil(shape[1] / box_size))
+        x_coords = []
+        y_coords = []
         for i in range(box_count_y):
             for j in range(box_count_x):
                 y, x = next(coord_gen)
                 y = int(i * box_size + y)
                 x = int(j * box_size + x)
                 if (y < shape[0] and x < shape[1]):
-                    coords.append((y, x))
-        return coords
+                    y_coords.append(y)
+                    x_coords.append(x)
+        return (y_coords, x_coords)
 
     @staticmethod
     def __get_stratified_coords3D__(coord_gen, box_size, shape):
-        coords = []
         box_count_z = int(np.ceil(shape[0] / box_size))
         box_count_y = int(np.ceil(shape[1] / box_size))
         box_count_x = int(np.ceil(shape[2] / box_size))
+        x_coords = []
+        y_coords = []
+        z_coords = []
         for i in range(box_count_z):
             for j in range(box_count_y):
                 for k in range(box_count_x):
@@ -132,8 +131,10 @@ class N2V_DataWrapper(Sequence):
                     y = int(j * box_size + y)
                     x = int(k * box_size + x)
                     if (z < shape[0] and y < shape[1] and x < shape[2]):
-                        coords.append((z, y, x))
-        return coords
+                        z_coords.append(z)
+                        y_coords.append(y)
+                        x_coords.append(x)
+        return (z_coords, y_coords, x_coords)
 
     @staticmethod
     def __rand_float_coords2D__(boxsize):

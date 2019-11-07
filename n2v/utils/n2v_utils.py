@@ -7,9 +7,6 @@ def get_subpatch(patch, coord, local_sub_patch_radius):
     start = np.maximum(0, np.array(coord) - local_sub_patch_radius)
     end = start + local_sub_patch_radius*2 + 1
 
-    start = np.append(start, 0)
-    end = np.append(end, patch.shape[-1])
-
     shift = np.minimum(0, patch.shape - end)
 
     start += shift
@@ -37,37 +34,52 @@ def normal_int(mean, sigma, w):
 
 
 def pm_normal_withoutCP(local_sub_patch_radius):
-    def normal_withoutCP(patch, coord, dims):
-        rand_coords = random_neighbor(patch.shape, coord)
-        return patch[tuple(rand_coords)]
+    def normal_withoutCP(patch, coords, dims):
+        vals = []
+        for coord in zip(*coords):
+            rand_coords = random_neighbor(patch.shape, coord)
+            vals.append(patch[tuple(rand_coords)])
+        return vals
     return normal_withoutCP
 
 
 def pm_uniform_withCP(local_sub_patch_radius):
-    def random_neighbor_withCP_uniform(patch, coord, dims):
-        sub_patch = get_subpatch(patch, coord,local_sub_patch_radius)
-        rand_coords = [np.random.randint(0, s) for s in sub_patch.shape[0:dims]]
-        return sub_patch[tuple(rand_coords)]
+    def random_neighbor_withCP_uniform(patch, coords, dims):
+        vals = []
+        for coord in zip(*coords):
+            sub_patch = get_subpatch(patch, coord,local_sub_patch_radius)
+            rand_coords = [np.random.randint(0, s) for s in sub_patch.shape[0:dims]]
+            vals.append(sub_patch[tuple(rand_coords)])
+        return vals
     return random_neighbor_withCP_uniform
 
 
 def pm_normal_additive(pixel_gauss_sigma):
-    def pixel_gauss(patch, coord, dims):
-        return np.random.normal(patch[tuple(coord)], pixel_gauss_sigma)
+    def pixel_gauss(patch, coords, dims):
+        vals = []
+        for coord in zip(*coords):
+            vals.append(np.random.normal(patch[tuple(coord)], pixel_gauss_sigma))
+        return vals
     return pixel_gauss
 
 
 def pm_normal_fitted(local_sub_patch_radius):
-    def local_gaussian(patch, coord, dims):
-        sub_patch = get_subpatch(patch, coord, local_sub_patch_radius)
-        axis = tuple(range(dims))
-        return np.random.normal(np.mean(sub_patch, axis=axis), np.std(sub_patch, axis=axis))
+    def local_gaussian(patch, coords, dims):
+        vals = []
+        for coord in zip(*coords):
+            sub_patch = get_subpatch(patch, coord, local_sub_patch_radius)
+            axis = tuple(range(dims))
+            vals.append(np.random.normal(np.mean(sub_patch, axis=axis), np.std(sub_patch, axis=axis)))
+        return vals
     return local_gaussian
 
 
 def pm_identity(local_sub_patch_radius):
-    def identity(patch, coord, dims):
-        return patch[tuple(coord)]
+    def identity(patch, coords, dims):
+        vals = []
+        for coord in zip(*coords):
+            vals.append(patch[coord])
+        return vals
     return identity
 
 
