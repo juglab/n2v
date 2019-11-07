@@ -44,18 +44,16 @@ class N2V_DataWrapper(Sequence):
             self.box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords2D__
             self.rand_float = self.__rand_float_coords2D__(self.box_size)
-            self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], X.shape[3]])
-            self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], Y.shape[3]])
         elif self.dims == 3:
             self.patch_sampler = self.__subpatch_sampling3D__
             self.box_size = np.round(np.sqrt(100 / perc_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords3D__
             self.rand_float = self.__rand_float_coords3D__(self.box_size)
-            self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], shape[2], X.shape[4]])
-            self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], shape[2], Y.shape[4]])
         else:
             raise Exception('Dimensionality not supported.')
 
+        self.X_Batches = np.zeros((self.X.shape[0], *self.shape, self.n_chan), dtype=np.float32)
+        self.Y_Batches = np.zeros((self.Y.shape[0], *self.shape, 2*self.n_chan), dtype=np.float32)
     def __len__(self):
         return int(np.ceil(len(self.X) / float(self.batch_size)))
 
