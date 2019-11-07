@@ -71,32 +71,29 @@ def pm_identity(local_sub_patch_radius):
     return identity
 
 
-def manipulate_val_data(X_val, Y_val, num_pix=64, shape=(64, 64), value_manipulation=pm_uniform_withCP(5)):
+def manipulate_val_data(X_val, Y_val, perc_pix=0.198, shape=(64, 64), value_manipulation=pm_uniform_withCP(5)):
     dims = len(shape)
     if dims == 2:
-        box_size = np.round(np.sqrt(shape[0] * shape[1] / num_pix)).astype(np.int)
+        box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int)
         get_stratified_coords = dw.__get_stratified_coords2D__
         rand_float = dw.__rand_float_coords2D__(box_size)
     elif dims == 3:
-        box_size = np.round(np.power(shape[0] * shape[1] * shape[2] / num_pix, 1 / 3.0)).astype(np.int)
+        box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int)
         get_stratified_coords = dw.__get_stratified_coords3D__
         rand_float = dw.__rand_float_coords3D__(box_size)
 
     n_chan = X_val.shape[-1]
 
+    Y_val *= 0
     for j in tqdm(range(X_val.shape[0]), desc='Preparing validation data: '):
         coords = get_stratified_coords(rand_float, box_size=box_size,
                                             shape=np.array(X_val.shape)[1:-1])
-        y_val = []
-        x_val = []
-        for k in range(len(coords)):
-            y_val.append(np.copy(Y_val[(j, *coords[k], ...)]))
-            x_val.append(value_manipulation(X_val[j, ...], coords[k], dims))
+        for c in range(n_chan):
+            indexing = (j,) + coords + (c,)
+            indexing_mask = (j,) + coords + (c + n_chan,)
+            y_val = X_val[indexing]
+            x_val = value_manipulation(X_val[j, ..., c], coords, dims)
 
-        Y_val[j] *= 0
-
-        for k in range(len(coords)):
-            for c in range(n_chan):
-                Y_val[(j, *coords[k], c)] = y_val[k][c]
-                Y_val[(j, *coords[k], n_chan+c)] = 1
-                X_val[(j, *coords[k], c)] = x_val[k][c]
+            Y_val[indexing] = y_val
+            Y_val[indexing_mask] = 1
+            X_val[indexing] = x_val

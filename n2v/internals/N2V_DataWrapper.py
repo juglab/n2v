@@ -24,7 +24,7 @@ class N2V_DataWrapper(Sequence):
                         The manipulator used for the pixel replacement.
     """
 
-    def __init__(self, X, Y, batch_size, num_pix=1, shape=(64, 64),
+    def __init__(self, X, Y, batch_size, perc_pix=0.198, shape=(64, 64),
                  value_manipulation=None):
         self.X, self.Y = X, Y
         self.batch_size = batch_size
@@ -35,16 +35,20 @@ class N2V_DataWrapper(Sequence):
         self.dims = len(shape)
         self.n_chan = X.shape[-1]
 
+        num_pix = int(np.product(shape)/100.0 * perc_pix)
+        assert num_pix >= 1, "Number of blind-spot pixels is below one. At least {}% of pixels should be replaced.".format(100.0/np.product(shape))
+        print("{} blind-spots will be generated per training patch of size {}.".format(num_pix, shape))
+
         if self.dims == 2:
             self.patch_sampler = self.__subpatch_sampling2D__
-            self.box_size = np.round(np.sqrt(shape[0] * shape[1] / num_pix)).astype(np.int)
+            self.box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords2D__
             self.rand_float = self.__rand_float_coords2D__(self.box_size)
             self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], X.shape[3]])
             self.Y_Batches = np.zeros([Y.shape[0], shape[0], shape[1], Y.shape[3]])
         elif self.dims == 3:
             self.patch_sampler = self.__subpatch_sampling3D__
-            self.box_size = np.round(np.power(shape[0] * shape[1] * shape[2] / num_pix, 1/3.0)).astype(np.int)
+            self.box_size = np.round(np.sqrt(100 / perc_pix)).astype(np.int)
             self.get_stratified_coords = self.__get_stratified_coords3D__
             self.rand_float = self.__rand_float_coords3D__(self.box_size)
             self.X_Batches = np.zeros([X.shape[0], shape[0], shape[1], shape[2], X.shape[4]])
