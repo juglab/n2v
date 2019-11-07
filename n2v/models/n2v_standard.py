@@ -370,6 +370,10 @@ class N2V(CARE):
         means = np.array([float(mean) for mean in self.config.means], ndmin=len(img.shape), dtype=np.float32)
         stds = np.array([float(std) for std in self.config.stds], ndmin=len(img.shape), dtype=np.float32)
 
+        if img.dtype != np.float32:
+            print('The input image is of type {} and will be casted to float32 for prediction.'.format(img.dtype))
+            img = img.astype(np.float32)
+
         new_axes = axes
         if 'C' in axes:
             new_axes = axes.replace('C', '') + 'C'
