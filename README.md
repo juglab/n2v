@@ -24,7 +24,7 @@ After installing Miniconda, the following lines might are likely the easiest way
 ```
 $ conda create -n 'n2v' python=3.6
 $ source activate n2v
-$ conda install tensorflow-gpu keras
+$ conda install tensorflow-gpu=1.14 keras=2.2.4
 $ pip install jupyter
 ```
 
