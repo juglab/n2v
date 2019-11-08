@@ -52,6 +52,7 @@ You are now ready to run Noise2Void.
 
 ## How to use it?
 Have a look at our jupyter notebook:
+* [2D example BSD68](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_BSD68)
 * [2D example SEM](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_SEM)
 * [2D example RGB](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_RGB)
 * [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
