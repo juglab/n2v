@@ -316,6 +316,7 @@ class N2V(CARE):
 
         if self.config.train_num_gpus > 1:
             # https://keras.io/utils/ supported with tf backend only
+            # TODO: check that K yields tensorflow
             from keras.utils import multi_gpu_model
             self.keras_model = multi_gpu_model(self.keras_model,
                                                gpus=self.config.train_num_gpus)
