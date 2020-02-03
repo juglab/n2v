@@ -314,6 +314,12 @@ class N2V(CARE):
                 rlrop_params['verbose'] = True
             self.callbacks.append(ReduceLROnPlateau(**rlrop_params))
 
+        if self.config.train_num_gpus > 1:
+            # https://keras.io/utils/ supported with tf backend only
+            from keras.utils import multi_gpu_model
+            self.keras_model = multi_gpu_model(self.keras_model,
+                                               gpus=self.config.train_num_gpus)
+
         self._model_prepared = True
 
 
