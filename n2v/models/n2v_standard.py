@@ -86,8 +86,22 @@ class N2V(CARE):
             self._update_and_check_config()
         self._model_prepared = False
         self.keras_model = self._build()
+
         if config is None:
             self._find_and_load_weights()
+        else:
+            # make this a multi_gpu_model
+            # NB. Does not work with tf 1.14 and 2.2.4 or 2.2.5
+            if self.config.train_num_gpus > 1:
+
+                # https://keras.io/utils/ supported with tf backend only
+                # TODO: check that K yields tensorflow
+
+                from keras.utils import multi_gpu_model
+                print('Using {} gpus for training'.format(self.config.train_num_gpus))
+                self.keras_model = multi_gpu_model(self.keras_model,
+                                                   gpus=self.config.train_num_gpus)
+
 
 
     def _build(self):
@@ -313,13 +327,6 @@ class N2V(CARE):
             if 'verbose' not in rlrop_params:
                 rlrop_params['verbose'] = True
             self.callbacks.append(ReduceLROnPlateau(**rlrop_params))
-
-        if self.config.train_num_gpus > 1:
-            # https://keras.io/utils/ supported with tf backend only
-            # TODO: check that K yields tensorflow
-            from keras.utils import multi_gpu_model
-            self.keras_model = multi_gpu_model(self.keras_model,
-                                               gpus=self.config.train_num_gpus)
 
         self._model_prepared = True
 
