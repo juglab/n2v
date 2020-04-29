@@ -13,7 +13,7 @@ import zipfile
 # create a folder for our data
 if not os.path.isdir('./data'):
     os.mkdir('./data')
-zipPath="data/SEM.zip"
+zipPath = "data/SEM.zip"
 if not os.path.exists(zipPath):
     # download and unzip data
     data = urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/pXgfbobntrw06lC/download', zipPath)
