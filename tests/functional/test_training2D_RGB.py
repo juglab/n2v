@@ -7,20 +7,20 @@ from csbdeep.utils import plot_history
 from n2v.utils.n2v_utils import manipulate_val_data
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
 from matplotlib import pyplot as plt
-import urllib
+import urllib.request
 import os
 import zipfile
 
 # create a folder for our data
 if not os.path.isdir('./data'):
     os.mkdir('data')
-    # check if data has been downloaded already
-    zipPath="data/RGB.zip"
-    if not os.path.exists(zipPath):
-        # download and unzip data
-        data = urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/Frru2hsjjAljpfW/download', zipPath)
-        with zipfile.ZipFile(zipPath, 'r') as zip_ref:
-            zip_ref.extractall("data")
+# check if data has been downloaded already
+zipPath = "data/RGB.zip"
+if not os.path.exists(zipPath):
+    # download and unzip data
+    data = urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/Frru2hsjjAljpfW/download', zipPath)
+    with zipfile.ZipFile(zipPath, 'r') as zip_ref:
+        zip_ref.extractall("data")
 
 # For training, we will load __one__ low-SNR RGB image and use the <code>N2V_DataGenerator</code> to extract non-overlapping patches
 datagen = N2V_DataGenerator()
@@ -29,7 +29,7 @@ datagen = N2V_DataGenerator()
 # The function will return a list of images (numpy arrays).
 # In the 'dims' parameter we specify the order of dimensions in the image files we are reading:
 # 'C' stands for channels (color)
-imgs = datagen.load_imgs_from_directory(directory="data/", filter='*.png', dims='YXC')
+imgs = datagen.load_imgs_from_directory(directory="./data", filter='*.png', dims='YXC')
 
 print('shape of loaded images: ',imgs[0].shape)
 # Remove alpha channel

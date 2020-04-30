@@ -1,4 +1,4 @@
-from n2v.internals.N2V_DataWrapper import  N2V_DataWrapper
+from n2v.internals.N2V_DataWrapper import N2V_DataWrapper
 
 import numpy as np
 

@@ -183,8 +183,8 @@ class N2V_DataGenerator():
             patches = []
             if n_dims == 2:
                 if data.shape[1] > shape[0] and data.shape[2] > shape[1]:
-                    for y in range(0, data.shape[1] - shape[0], shape[0]):
-                        for x in range(0, data.shape[2] - shape[1], shape[1]):
+                    for y in range(0, data.shape[1] - shape[0] + 1, shape[0]):
+                        for x in range(0, data.shape[2] - shape[1] + 1, shape[1]):
                             patches.append(data[:, y:y + shape[0], x:x + shape[1]])
 
                     return np.concatenate(patches)
@@ -194,14 +194,13 @@ class N2V_DataGenerator():
                     print("'shape' is too big.")
             elif n_dims == 3:
                 if data.shape[1] > shape[0] and data.shape[2] > shape[1] and data.shape[3] > shape[2]:
-                    for z in range(0, data.shape[1] - shape[0],  shape[0]):
-                        for y in range(0, data.shape[2] - shape[1], shape[1]):
-                            for x in range(0, data.shape[3] - shape[2], shape[2]):
+                    for z in range(0, data.shape[1] - shape[0] + 1,  shape[0]):
+                        for y in range(0, data.shape[2] - shape[1] + 1, shape[1]):
+                            for x in range(0, data.shape[3] - shape[2] + 1, shape[2]):
                                 patches.append(data[:, z:z + shape[0], y:y + shape[1], x:x + shape[2]])
 
                     return np.concatenate(patches)
-                elif data.shape[1] == shape[0] and data.shape[2] == shape[1] and data.shape[3] == shape[
-                    2]:
+                elif data.shape[1] == shape[0] and data.shape[2] == shape[1] and data.shape[3] == shape[2]:
                     return data
                 else:
                     print("'shape' is too big.")
