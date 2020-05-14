@@ -65,6 +65,8 @@ class N2VConfig(argparse.Namespace):
         Noise2Void pixel value manipulator. Default: ``uniform_withCP``
     n2v_neighborhood_radius : int
         Neighborhood radius for n2v_old manipulator. Default: ``5``
+    structN2Vmask : [[int]]
+        Masking kernel for StructN2V to hide pixels adjacent to main blind spot. Value 1 = 'hidden', Value 0 = 'non hidden'. Nested lists equivalent to ndarray. Must have odd length in each dimension (center pixel is blind spot). Default ``None`` implies normal N2V masking.
 
         .. _ReduceLROnPlateau: https://keras.io/callbacks/#reducelronplateau
     """
@@ -152,6 +154,8 @@ class N2VConfig(argparse.Namespace):
                 # warnings.warn("ignoring parameter 'n_dim'")
             except:
                 pass
+
+            self.structN2Vmask = None
             
         self.probabilistic         = False
 
@@ -223,6 +227,8 @@ class N2VConfig(argparse.Namespace):
         )
         ok['n2v_manipulator']       = self.n2v_manipulator in ['normal_withoutCP', 'uniform_withCP', 'normal_additive',
                                                                'normal_fitted', 'identity']
+        # ok['structN2Vmask'] = self.structN2Vmask.ndim = self.ndim and all([x in [0,1] for x in self.structN2Vmask.flat])
+        ok['structN2Vmask'] = True
 
         if return_invalid:
             return all(ok.values()), tuple(k for (k,v) in ok.items() if not v)

@@ -73,7 +73,6 @@ def pm_normal_fitted(local_sub_patch_radius):
         return vals
     return local_gaussian
 
-
 def pm_identity(local_sub_patch_radius):
     def identity(patch, coords, dims):
         vals = []
@@ -81,7 +80,6 @@ def pm_identity(local_sub_patch_radius):
             vals.append(patch[coord])
         return vals
     return identity
-
 
 def manipulate_val_data(X_val, Y_val, perc_pix=0.198, shape=(64, 64), value_manipulation=pm_uniform_withCP(5)):
     dims = len(shape)
@@ -109,3 +107,19 @@ def manipulate_val_data(X_val, Y_val, perc_pix=0.198, shape=(64, 64), value_mani
             Y_val[indexing] = y_val
             Y_val[indexing_mask] = 1
             X_val[indexing] = x_val
+
+def autocorrelation(x):
+  """
+  nD autocorrelation
+  remove mean per-patch (not global GT)
+  normalize stddev to 1
+  value at zero shift normalized to 1...
+  """
+  x = (x - np.mean(x))/np.std(x)
+  x  = np.fft.fftn(x)
+  x  = np.abs(x)**2
+  x = np.fft.ifftn(x).real
+  x = x / x.flat[0]
+  x = np.fft.fftshift(x)
+  return x
+

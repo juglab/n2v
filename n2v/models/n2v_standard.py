@@ -63,10 +63,11 @@ class N2V(CARE):
 
     def __init__(self, config, name=None, basedir='.'):
         """See class docstring."""
+        # self._config_class
 
         config is None or isinstance(config,self._config_class) or _raise (
-            ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (type(config).__name__, self._config_class.__name__))
-        )
+                ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (type(config).__name__, self._config_class.__name__))
+            )
         if config is not None and not config.is_valid():
             invalid_attr = config.is_valid(True)[1]
             raise ValueError('Invalid configuration attributes: ' + ', '.join(invalid_attr))
@@ -88,6 +89,11 @@ class N2V(CARE):
         self.keras_model = self._build()
         if config is None:
             self._find_and_load_weights()
+        
+        
+        print("config.structN2Vmask", config.structN2Vmask)
+        # self.structN2Vmask = np.array(config.structN2Vmask)
+        # self.config.structN2Vmask = np.array(self.config.structN2Vmask)
 
 
     def _build(self):
@@ -209,7 +215,7 @@ class N2V(CARE):
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
         training_data = N2V_DataWrapper(X, np.concatenate((X, np.zeros(X.shape, dtype=X.dtype)), axis=axes.index('C')),
                                                     self.config.train_batch_size, self.config.n2v_perc_pix,
-                                                    self.config.n2v_patch_shape, manipulator)
+                                                    self.config.n2v_patch_shape, manipulator, structN2Vmask=np.array(self.config.structN2Vmask))
 
         # validation_Y is also validation_X plus a concatenated masking channel.
         # To speed things up, we precompute the masking vo the validation data.
