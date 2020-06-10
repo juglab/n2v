@@ -1,8 +1,6 @@
 from keras.utils import Sequence
 
 import numpy as np
-# from ..utils import n2v_utils
-# import ipdb
 
 class N2V_DataWrapper(Sequence):
     """
@@ -36,8 +34,8 @@ class N2V_DataWrapper(Sequence):
         self.dims = len(shape)
         self.n_chan = X.shape[-1]
         self.structN2Vmask = structN2Vmask
-        # self.structN2Vmask = np.array([[0,0,1,1,1,0,0]])
-        print("StructN2V Mask is: ", self.structN2Vmask)
+        if self.structN2Vmask is not None:
+            print("StructN2V Mask is: ", self.structN2Vmask)
 
         num_pix = int(np.product(shape)/100.0 * perc_pix)
         assert num_pix >= 1, "Number of blind-spot pixels is below one. At least {}% of pixels should be replaced.".format(100.0/np.product(shape))
@@ -111,7 +109,6 @@ class N2V_DataWrapper(Sequence):
         mix = mix.clip(min=np.zeros(ndim),max=np.array(patch.shape)-1).astype(np.uint)
         ## replace neighbouring pixels with random values from flat dist
         patch[tuple(mix.T)] = np.random.rand(mix.shape[0])*4 - 2
-        # patch[tuple(coords)] = 2
 
 
 

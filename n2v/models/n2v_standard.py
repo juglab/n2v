@@ -63,7 +63,6 @@ class N2V(CARE):
 
     def __init__(self, config, name=None, basedir='.'):
         """See class docstring."""
-        # self._config_class
 
         config is None or isinstance(config,self._config_class) or _raise (
                 ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (type(config).__name__, self._config_class.__name__))
@@ -90,11 +89,6 @@ class N2V(CARE):
         if config is None:
             self._find_and_load_weights()
         
-        
-        print("config.structN2Vmask", config.structN2Vmask)
-        # self.structN2Vmask = np.array(config.structN2Vmask)
-        # self.config.structN2Vmask = np.array(self.config.structN2Vmask)
-
 
     def _build(self):
         return self._build_unet(
@@ -213,9 +207,11 @@ class N2V(CARE):
 
         # Here we prepare the Noise2Void data. Our input is the noisy data X and as target we take X concatenated with
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
+        _mask = self.config.structN2Vmask
+        _mask = np.array(_mask) if _mask is not None
         training_data = N2V_DataWrapper(X, np.concatenate((X, np.zeros(X.shape, dtype=X.dtype)), axis=axes.index('C')),
                                                     self.config.train_batch_size, self.config.n2v_perc_pix,
-                                                    self.config.n2v_patch_shape, manipulator, structN2Vmask=np.array(self.config.structN2Vmask))
+                                                    self.config.n2v_patch_shape, manipulator, structN2Vmask=_mask)
 
         # validation_Y is also validation_X plus a concatenated masking channel.
         # To speed things up, we precompute the masking vo the validation data.
