@@ -207,14 +207,13 @@ class N2V(CARE):
 
         # Here we prepare the Noise2Void data. Our input is the noisy data X and as target we take X concatenated with
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
-        _mask = self.config.structN2Vmask
-        _mask = np.array(_mask) if _mask is not None
+        _mask = np.array(self.config.structN2Vmask) if self.config.structN2Vmask else None
         training_data = N2V_DataWrapper(X, np.concatenate((X, np.zeros(X.shape, dtype=X.dtype)), axis=axes.index('C')),
                                                     self.config.train_batch_size, self.config.n2v_perc_pix,
                                                     self.config.n2v_patch_shape, manipulator, structN2Vmask=_mask)
 
         # validation_Y is also validation_X plus a concatenated masking channel.
-        # To speed things up, we precompute the masking vo the validation data.
+        # To speed things up, we precompute the masking for the validation data.
         validation_Y = np.concatenate((validation_X, np.zeros(validation_X.shape, dtype=validation_X.dtype)), axis=axes.index('C'))
         n2v_utils.manipulate_val_data(validation_X, validation_Y,
                                                         perc_pix=self.config.n2v_perc_pix,

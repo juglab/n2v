@@ -23,3 +23,5 @@ config.json
 
 /.project
 history/
+
+.cache/

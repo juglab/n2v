@@ -227,10 +227,16 @@ class N2VConfig(argparse.Namespace):
         )
         ok['n2v_manipulator']       = self.n2v_manipulator in ['normal_withoutCP', 'uniform_withCP', 'normal_additive',
                                                                'normal_fitted', 'identity']
-        ok['structN2Vmask'] = self.structN2Vmask.ndim == self.ndim and 
-                                    all(x%2==0 for x in self.structN2Vmask.shape) and
-                                    all([x in [0,1] for x in self.structN2Vmask.flat])
-        # ok['structN2Vmask'] = True
+
+
+        if self.structN2Vmask is None:
+            ok['structN2Vmask'] = True
+        else:
+            mask = np.array(self.structN2Vmask)
+            t1 = mask.ndim == self.n_dim
+            t2 = all(x%2==1 for x in mask.shape)
+            t3 = all([x in [0,1] for x in mask.flat])
+            ok['structN2Vmask'] = t1 and t2 and t3
 
         if return_invalid:
             return all(ok.values()), tuple(k for (k,v) in ok.items() if not v)
