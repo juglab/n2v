@@ -65,6 +65,9 @@ class N2VConfig(argparse.Namespace):
         Noise2Void pixel value manipulator. Default: ``uniform_withCP``
     n2v_neighborhood_radius : int
         Neighborhood radius for n2v_old manipulator. Default: ``5``
+    single_net_per_channel : bool
+        Enabling this creates a unet for each channel and each channel will be treated independently.
+        Note: This makes the ``network n_channel_in`` times larger. Default: ``True``
 
         .. _ReduceLROnPlateau: https://keras.io/callbacks/#reducelronplateau
     """
@@ -146,6 +149,8 @@ class N2VConfig(argparse.Namespace):
             self.n2v_manipulator       = 'uniform_withCP'
             self.n2v_neighborhood_radius = 5
 
+            self.single_net_per_channel = True
+
             # disallow setting 'n_dim' manually
             try:
                 del kwargs['n_dim']
@@ -223,6 +228,8 @@ class N2VConfig(argparse.Namespace):
         )
         ok['n2v_manipulator']       = self.n2v_manipulator in ['normal_withoutCP', 'uniform_withCP', 'normal_additive',
                                                                'normal_fitted', 'identity']
+
+        ok['single_net_per_channel'] = isinstance( self.single_net_per_channel, bool )
 
         if return_invalid:
             return all(ok.values()), tuple(k for (k,v) in ok.items() if not v)
