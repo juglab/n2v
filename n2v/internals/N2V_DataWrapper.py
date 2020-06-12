@@ -89,7 +89,6 @@ class N2V_DataWrapper(Sequence):
 
         return self.X_Batches[idx], self.Y_Batches[idx]
 
-
     def apply_structN2Vmask(self, patch, coords, dims, mask):
         """
         each point in coords corresponds to the center of the mask.
@@ -109,10 +108,6 @@ class N2V_DataWrapper(Sequence):
         mix = mix.clip(min=np.zeros(ndim),max=np.array(patch.shape)-1).astype(np.uint)
         ## replace neighbouring pixels with random values from flat dist
         patch[tuple(mix.T)] = np.random.rand(mix.shape[0])*4 - 2
-
-
-
-
 
     # return x_val_structN2V, indexing_structN2V
     @staticmethod
