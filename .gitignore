@@ -25,3 +25,8 @@ config.json
 history/
 
 .cache/
+.pydevproject
+.settings/org.python.pydev.yaml
+.settings/org.eclipse.core.resources.prefs
+.pydevproject
+.pydevproject
