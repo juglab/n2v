@@ -55,7 +55,7 @@ setup(name='n2v',
           "backports.tempfile;python_version<'3.4'",
           "csbdeep>=0.4.0,<0.5.0",
           "Pillow",
-          "pyyaml=5.3.1",
+          "pyyaml>=5.3.1",
           "zipfile"
         ]
       )
