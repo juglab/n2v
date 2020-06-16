@@ -1,6 +1,7 @@
 from csbdeep.models import CARE
 from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
-from csbdeep.internals import nets
+from csbdeep.internals import nets, predict
+from csbdeep.models.base_model import suppress_without_basedir
 
 from six import string_types
 from csbdeep.utils.six import Path, FileNotFoundError
@@ -9,16 +10,19 @@ from csbdeep.data import PadAndCropResizer
 from keras.callbacks import TerminateOnNaN
 import tensorflow as tf
 from keras import backend as K
+import yaml
+import json
+import os
 
 import datetime
 import warnings
 
+from zipfile import ZipFile
 from .n2v_config import N2VConfig
-from ..utils import n2v_utils
-from ..internals.N2V_DataWrapper import N2V_DataWrapper
-from ..internals.n2v_losses import loss_mae, loss_mse
-from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
-from n2v.nets.unet import build_single_unet_per_channel
+from internals.N2V_DataWrapper import N2V_DataWrapper
+from internals.n2v_losses import loss_mse, loss_mae 
+from utils import n2v_utils
+from utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
 
 import numpy as np
 
@@ -420,6 +424,89 @@ class N2V(CARE):
             self.logdir.mkdir(parents=True, exist_ok=True)
             save_json(vars(self.config), str(config_file))
     
+    @suppress_without_basedir(warn=True)
+    def export_TF(self, fname=None):
+        CARE.export_TF(self, fname=fname)
+        yml_dict = self.get_yml_dict()
+        yml_file = self.logdir/'config.yml'
+        with open(yml_file, 'w') as outfile:
+            yaml.dump(yml_dict, outfile, default_flow_style=False, sort_keys=False)
+            
+        if fname is None:
+            fname = self.logdir / 'TF_SavedModel.zip'
+        else:
+            fname = Path(fname)
+            
+        with ZipFile(fname, 'a') as myzip:
+            myzip.write(yml_file, arcname=os.path.basename(yml_file))
+    
+    def get_yml_dict(self, patch_shape=None):
+        if (patch_shape != None):
+            self.config.patch_shape = patch_shape
+        v1 = np.asarray(self.config.means)
+        v2 = np.asarray(self.config.stds)
+        kwargs_val = '{ mean: ' + np.array2string(v1, separator=', ', formatter={'str_kind': lambda x: x}) + ', stdDev: ' + np.array2string(v2, separator=', ', formatter={'str_kind': lambda x: x}) + '}'
+        axes_val = 'b' + self.config.axes
+        axes_val = axes_val.lower()
+        data_range_val = '[-inf, inf]'
+        val = 2**self.config.unet_n_depth 
+        val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
+        min_val = [1, val, val, self.config.n_channel_in ]
+        step_val = [1, val, val, 0]
+        halo_val = [0, val1, val1, 0]
+        scale_val = [1, 1, 1, 1]
+        offset_val = [0, 0, 0, 0]
+        if (self.config.n_dim == 3) :
+            min_val = [1, val, val, val, self.config.n_channel_in ]
+            step_val = [1, val, val, val, 0]
+            halo_val = [0, val1, val1, val1, 0]
+            scale_val = [1, 1, 1, 1, 1]
+            offset_val = [0, 0, 0, 0, 0]
+        
+        tr_kwargs_val = json.dumps(vars(self.config)).replace('"','')
+        
+        yml_dict = dict(
+            language = 'python',
+            framework = 'tensorflow',
+            inputs = dict (
+                name = 'inputs',
+                axes = axes_val,
+                data_type = 'float32',
+                data_range = data_range_val,
+                shape = dict (
+                    min = np.array2string(np.array(min_val), separator=', ', formatter={'str_kind': lambda x: x}),
+                    step = str(step_val)
+                )
+            ),
+            outputs = dict ( 
+                name = self.keras_model.layers[-1].name , 
+                axes = axes_val,
+                data_type = 'float32',
+                data_range = '[-inf, inf]',
+                halo = np.array2string(np.array(halo_val), separator=', '),
+                shape = dict (
+                    scale = scale_val,
+                    offset = offset_val
+                )
+            ),
+            training = dict (
+                source = 'de.csbdresden.n2v.train.N2VTraining',
+                kwargs = tr_kwargs_val
+            ),
+            prediction = dict (
+                preprocess = dict (
+                    spec = 'de.csbdresden.n2v.predict.N2VPrediction::preprocess',
+                    kwargs = kwargs_val
+                ),
+                postprocess = dict (
+                    spec = 'de.csbdresden.n2v.predict.N2VPrediction::postprocess',
+                    kwargs = kwargs_val
+                )
+            )
+        )
+        return yml_dict
+
+        
     @property
     def _config_class(self):
         return N2VConfig
