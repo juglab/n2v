@@ -1,7 +1,6 @@
 __pycache__/
 *.py[cod]
 .idea
-
 .DS_Store
 .ipynb_checkpoints
 .pytest_cache
@@ -10,7 +9,6 @@ build/
 dist/
 docs/build/
 examples/**/models/
-
 *.png
 *.npz
 *.npy
@@ -20,7 +18,7 @@ examples/**/models/
 *.zip
 *.tfevents.*
 config.json
-
+config.yml
 /.project
 history/
 
@@ -29,4 +27,5 @@ history/
 .settings/org.python.pydev.yaml
 .settings/org.eclipse.core.resources.prefs
 .pydevproject
+/.settings
 .pydevproject
