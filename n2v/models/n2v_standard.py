@@ -463,7 +463,7 @@ class N2V(CARE):
             scale_val = [1, 1, 1, 1, 1]
             offset_val = [0, 0, 0, 0, 0]
         
-        tr_kwargs_val = json.dumps(vars(self.config)).replace('"','')
+        tr_kwargs_val = json.dumps(vars(self.config))
         
         yml_dict = dict(
             language = 'python',
@@ -474,7 +474,7 @@ class N2V(CARE):
                 data_type = 'float32',
                 data_range = data_range_val,
                 shape = dict (
-                    min = np.array2string(np.array(min_val), separator=', ', formatter={'str_kind': lambda x: x}),
+                    min = str(min_val),
                     step = str(step_val)
                 )
             ),
@@ -482,11 +482,11 @@ class N2V(CARE):
                 name = self.keras_model.layers[-1].name , 
                 axes = axes_val,
                 data_type = 'float32',
-                data_range = '[-inf, inf]',
-                halo = np.array2string(np.array(halo_val), separator=', '),
+                data_range = data_range_val.replace("'",""),
+                halo = str(halo_val),
                 shape = dict (
-                    scale = scale_val,
-                    offset = offset_val
+                    scale = str(scale_val),
+                    offset = str(offset_val)
                 )
             ),
             training = dict (
