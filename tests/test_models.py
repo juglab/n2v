@@ -1,7 +1,7 @@
 import pytest
 import yaml
-from models import N2VConfig, N2V
-from internals.N2V_DataGenerator import N2V_DataGenerator
+from n2v.models import N2VConfig, N2V
+from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
 import urllib.request
 import os
 from zipfile import ZipFile

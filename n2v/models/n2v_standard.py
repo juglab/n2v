@@ -19,10 +19,10 @@ import warnings
 
 from zipfile import ZipFile
 from .n2v_config import N2VConfig
-from internals.N2V_DataWrapper import N2V_DataWrapper
-from internals.n2v_losses import loss_mse, loss_mae 
-from utils import n2v_utils
-from utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
+from ..internals.N2V_DataWrapper import N2V_DataWrapper
+from ..internals.n2v_losses import loss_mse, loss_mae 
+from ..utils import n2v_utils
+from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
 
 import numpy as np
 
