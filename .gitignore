@@ -22,3 +22,6 @@ examples/**/models/
 config.json
 
 /.project
+history/
+
+.cache/

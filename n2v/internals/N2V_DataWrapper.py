@@ -2,7 +2,6 @@ from keras.utils import Sequence
 
 import numpy as np
 
-
 class N2V_DataWrapper(Sequence):
     """
     The N2V_DataWrapper extracts random sub-patches from the given data and manipulates 'num_pix' pixels in the
@@ -25,7 +24,7 @@ class N2V_DataWrapper(Sequence):
     """
 
     def __init__(self, X, Y, batch_size, perc_pix=0.198, shape=(64, 64),
-                 value_manipulation=None):
+                 value_manipulation=None, structN2Vmask=None):
         self.X, self.Y = X, Y
         self.batch_size = batch_size
         self.perm = np.random.permutation(len(self.X))
@@ -34,6 +33,9 @@ class N2V_DataWrapper(Sequence):
         self.range = np.array(self.X.shape[1:-1]) - np.array(self.shape)
         self.dims = len(shape)
         self.n_chan = X.shape[-1]
+        self.structN2Vmask = structN2Vmask
+        if self.structN2Vmask is not None:
+            print("StructN2V Mask is: ", self.structN2Vmask)
 
         num_pix = int(np.product(shape)/100.0 * perc_pix)
         assert num_pix >= 1, "Number of blind-spot pixels is below one. At least {}% of pixels should be replaced.".format(100.0/np.product(shape))
@@ -81,9 +83,33 @@ class N2V_DataWrapper(Sequence):
                 self.Y_Batches[indexing] = y_val
                 self.Y_Batches[indexing_mask] = 1
                 self.X_Batches[indexing] = x_val
+                
+                if self.structN2Vmask is not None:
+                    self.apply_structN2Vmask(self.X_Batches[j, ..., c], coords, self.dims, self.structN2Vmask)
 
         return self.X_Batches[idx], self.Y_Batches[idx]
 
+    def apply_structN2Vmask(self, patch, coords, dims, mask):
+        """
+        each point in coords corresponds to the center of the mask.
+        then for point in the mask with value=1 we assign a random value
+        """
+        coords = np.array(coords).astype(np.int)
+        ndim = mask.ndim
+        center = np.array(mask.shape)//2
+        ## leave the center value alone
+        mask[tuple(center.T)] = 0
+        ## displacements from center
+        dx = np.indices(mask.shape)[:,mask==1] - center[:,None]
+        ## combine all coords (ndim, npts,) with all displacements (ncoords,ndim,)
+        mix = (dx.T[...,None] + coords[None])
+        mix = mix.transpose([1,0,2]).reshape([ndim,-1]).T
+        ## stay within patch boundary
+        mix = mix.clip(min=np.zeros(ndim),max=np.array(patch.shape)-1).astype(np.uint)
+        ## replace neighbouring pixels with random values from flat dist
+        patch[tuple(mix.T)] = np.random.rand(mix.shape[0])*4 - 2
+
+    # return x_val_structN2V, indexing_structN2V
     @staticmethod
     def __subpatch_sampling2D__(X, X_Batches, indices, range, shape):
         for j in indices:

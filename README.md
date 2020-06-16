@@ -56,6 +56,7 @@ Have a look at our jupyter notebook:
 * [2D example SEM](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_SEM)
 * [2D example RGB](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_RGB)
 * [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
+* [2D StructN2V example synth_mem](https://github.com/juglab/n2v/tree/master/examples/2D/structN2V_2D_synth_mem/)
 
 ## How to cite:
 ```
@@ -67,3 +68,6 @@ Have a look at our jupyter notebook:
   year={2019}
 }
 ```
+
+see [here](https://github.com/mpicbg-csbd/structured_N2V_paper) for citing `StructN2V`.
+
