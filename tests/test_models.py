@@ -15,14 +15,14 @@ class TestExportModel():
         if not os.path.isdir('data'):
             os.mkdir('data')
         zipPath = "data/RGB.zip"
-        if not os.path.exists(zipPath):
+        if not os.path.isfile(zipPath):
             # download and unzip data
             urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/Frru2hsjjAljpfW/download', zipPath)
             with ZipFile(zipPath, 'r') as zip_ref:
                 zip_ref.extractall('data')
                 
         zipPath = "data/SEM.zip"
-        if not os.path.exists(zipPath):
+        if not os.path.isfile(zipPath):
             urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/pXgfbobntrw06lC/download', zipPath)
             with ZipFile(zipPath, 'r') as zip_ref:
                 zip_ref.extractall('data')
