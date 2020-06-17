@@ -38,7 +38,7 @@ def test_generate_patches_3D():
 
     datagen = N2V_DataGenerator()
 
-    imgs = datagen.load_imgs_from_directory(directory="data", filter='*.tif', dims='ZYX')
+    imgs = datagen.load_imgs_from_directory(directory="data", filter='flywing.tif', dims='ZYX')
     print(imgs[0].shape)
     patches = datagen.generate_patches_from_list(imgs[:1], shape=(35, 520, 692))
     assert len(patches) == 1
