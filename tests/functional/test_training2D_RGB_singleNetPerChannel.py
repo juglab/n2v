@@ -64,7 +64,7 @@ X_val = patches[5000:]
 config = N2VConfig(X, unet_kern_size=3,
             unet_n_first=64, unet_n_depth=3, train_steps_per_epoch=5, train_epochs=25, train_loss='mse',
             batch_norm=True, train_batch_size=128, n2v_perc_pix=5, n2v_patch_shape=(64, 64),
-            n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5, single_net_per_channel=False)
+            n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5, single_net_per_channel=True)
 vars(config)
 
 # name used to identify the model
