@@ -30,17 +30,17 @@ class N2VConfig(argparse.Namespace):
     Attributes
     ----------
     unet_residual : bool
-        Parameter `residual` of :func:`n2v_old.nets.common_unet`. Default: ``n_channel_in == n_channel_out``
+        Parameter `residual` of :func:`csbdeep.nets.common_unet`. Default: ``n_channel_in == n_channel_out``
     unet_n_depth : int
-        Parameter `n_depth` of :func:`n2v_old.nets.common_unet`. Default: ``2``
+        Parameter `n_depth` of :func:`csbdeep.nets.common_unet`. Default: ``2``
     unet_kern_size : int
-        Parameter `kern_size` of :func:`n2v_old.nets.common_unet`. Default: ``5 if n_dim==2 else 3``
+        Parameter `kern_size` of :func:`csbdeep.nets.common_unet`. Default: ``5 if n_dim==2 else 3``
     unet_n_first : int
-        Parameter `n_first` of :func:`n2v_old.nets.common_unet`. Default: ``32``
+        Parameter `n_first` of :func:`csbdeep.nets.common_unet`. Default: ``32``
     batch_norm : bool
         Activate batch norm
     unet_last_activation : str
-        Parameter `last_activation` of :func:`n2v_old.nets.common_unet`. Default: ``linear``
+        Parameter `last_activation` of :func:`csbdeep.nets.common_unet`. Default: ``linear``
     train_loss : str
         Name of training loss. Default: ``'laplace' if probabilistic else 'mae'``
     train_epochs : int
@@ -64,7 +64,7 @@ class N2VConfig(argparse.Namespace):
     n2v_manipulator : str
         Noise2Void pixel value manipulator. Default: ``uniform_withCP``
     n2v_neighborhood_radius : int
-        Neighborhood radius for n2v_old manipulator. Default: ``5``
+        Neighborhood radius for n2v manipulator. Default: ``5``
     single_net_per_channel : bool
         Enabling this creates a unet for each channel and each channel will be treated independently.
         Note: This makes the ``network n_channel_in`` times larger. Default: ``True``
