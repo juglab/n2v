@@ -233,7 +233,7 @@ class N2VConfig(argparse.Namespace):
         )
         ok['n2v_manipulator']       = self.n2v_manipulator in ['normal_withoutCP', 'uniform_withCP', 'normal_additive',
                                                                'normal_fitted', 'identity']
-
+        ok['n2v_neighborhood_radius']= _is_int(self.n2v_neighborhood_radius, 0) 
         ok['single_net_per_channel'] = isinstance( self.single_net_per_channel, bool )
 
         if self.structN2Vmask is None:
