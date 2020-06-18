@@ -49,8 +49,8 @@ setup(name='n2v',
           "matplotlib",
           "six",
           "keras>=2.2.4,<2.3.0",
-          "tifffile>=2020.5.11"
-          "imagecodecs>=2020.2.18"
+          "tifffile>=2020.5.11",
+          "imagecodecs>=2020.2.18",
           "tqdm",
           "pathlib2;python_version<'3'",
           "backports.tempfile;python_version<'3.4'",
