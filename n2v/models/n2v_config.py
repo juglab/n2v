@@ -68,6 +68,9 @@ class N2VConfig(argparse.Namespace):
     single_net_per_channel : bool
         Enabling this creates a unet for each channel and each channel will be treated independently.
         Note: This makes the ``network n_channel_in`` times larger. Default: ``True``
+    structN2Vmask : [[int]]
+        Masking kernel for StructN2V to hide pixels adjacent to main blind spot. Value 1 = 'hidden', Value 0 = 'non hidden'. Nested lists equivalent to ndarray. Must have odd length in each dimension (center pixel is blind spot). Default ``None`` implies normal N2V masking.
+
 
         .. _ReduceLROnPlateau: https://keras.io/callbacks/#reducelronplateau
     """
@@ -157,6 +160,8 @@ class N2VConfig(argparse.Namespace):
                 # warnings.warn("ignoring parameter 'n_dim'")
             except:
                 pass
+
+            self.structN2Vmask = None
             
         self.probabilistic         = False
 
@@ -230,6 +235,15 @@ class N2VConfig(argparse.Namespace):
                                                                'normal_fitted', 'identity']
 
         ok['single_net_per_channel'] = isinstance( self.single_net_per_channel, bool )
+
+        if self.structN2Vmask is None:
+            ok['structN2Vmask'] = True
+        else:
+            mask = np.array(self.structN2Vmask)
+            t1 = mask.ndim == self.n_dim
+            t2 = all(x%2==1 for x in mask.shape)
+            t3 = all([x in [0,1] for x in mask.flat])
+            ok['structN2Vmask'] = t1 and t2 and t3
 
         if return_invalid:
             return all(ok.values()), tuple(k for (k,v) in ok.items() if not v)
