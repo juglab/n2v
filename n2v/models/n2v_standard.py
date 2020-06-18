@@ -433,7 +433,7 @@ class N2V(CARE):
             yaml.dump(yml_dict, outfile, default_flow_style=False, sort_keys=False)
             
         if fname is None:
-            fname = self.logdir / 'TF_SavedModel.zip'
+            fname = self.logdir / 'export.modelzoo.zip'
         else:
             fname = Path(fname)
             
@@ -468,6 +468,7 @@ class N2V(CARE):
         yml_dict = dict(
             language = 'python',
             framework = 'tensorflow',
+            source = 'n2v / denoiseg',
             inputs = dict (
                 name = 'inputs',
                 axes = axes_val,
@@ -490,16 +491,14 @@ class N2V(CARE):
                 )
             ),
             training = dict (
-                source = 'de.csbdresden.n2v.train.N2VTraining',
+                source = 'n2v.train()',
                 kwargs = tr_kwargs_val
             ),
             prediction = dict (
                 preprocess = dict (
-                    spec = 'de.csbdresden.n2v.predict.N2VPrediction::preprocess',
                     kwargs = kwargs_val
                 ),
                 postprocess = dict (
-                    spec = 'de.csbdresden.n2v.predict.N2VPrediction::postprocess',
                     kwargs = kwargs_val
                 )
             )

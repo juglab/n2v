@@ -49,7 +49,7 @@ class TestExportModel():
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
         model.export_TF()
-        with ZipFile('models/n2v_2D_RGB/TF_SavedModel.zip', 'r') as myzip:
+        with ZipFile('models/n2v_2D_RGB/export.modelzoo.zip', 'r') as myzip:
             myzip.extract('config.yml', 'models/n2v_2D_RGB/extracted')
         my_yml = model.get_yml_dict(patch_shape=config.n2v_patch_shape)
         with open('models/n2v_2D_RGB/extracted/config.yml', 'r') as infile:
@@ -71,7 +71,7 @@ class TestExportModel():
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
         model.export_TF()
-        with ZipFile('models/n2v_2D_SEM/TF_SavedModel.zip', 'r') as myzip:
+        with ZipFile('models/n2v_2D_SEM/export.modelzoo.zip', 'r') as myzip:
             myzip.extract('config.yml', 'models/n2v_2D_SEM/extracted')
         my_yml = model.get_yml_dict()
         with open('models/n2v_2D_SEM/extracted/config.yml', 'r') as infile:
