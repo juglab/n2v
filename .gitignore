@@ -16,6 +16,7 @@ examples/**/models/
 *.hdf5
 *.h5
 *.zip
+!flybrain_lzw.tiff
 *.tfevents.*
 config.json
 config.yml
