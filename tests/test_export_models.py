@@ -56,11 +56,11 @@ class TestExportModel():
         model.train(X, X_val)
         model.export_TF()
         with ZipFile('models/n2v_2D_RGB/export.bioimage.io.zip', 'r') as myzip:
-            myzip.extract('config.yml', 'models/n2v_2D_RGB/extracted')
+            myzip.extract('model.yaml', 'models/n2v_2D_RGB/extracted')
         my_yml = model.get_yml_dict(patch_shape=config.n2v_patch_shape)
         
         yaml=YAML(typ='rt') 
-        with open('models/n2v_2D_RGB/extracted/config.yml', 'r') as infile:
+        with open('models/n2v_2D_RGB/extracted/model.yaml', 'r') as infile:
             yml_dict = yaml.load(infile)
         assert my_yml == yml_dict
         
@@ -80,10 +80,10 @@ class TestExportModel():
         model.train(X, X_val)
         model.export_TF()
         with ZipFile('models/n2v_2D_SEM/export.bioimage.io.zip', 'r') as myzip:
-            myzip.extract('config.yml', 'models/n2v_2D_SEM/extracted')
+            myzip.extract('model.yaml', 'models/n2v_2D_SEM/extracted')
         my_yml = model.get_yml_dict()
         yaml=YAML(typ='rt')
-        with open('models/n2v_2D_SEM/extracted/config.yml', 'r') as infile:
+        with open('models/n2v_2D_SEM/extracted/model.yaml', 'r') as infile:
             yml_dict = yaml.load(infile)
         assert my_yml == yml_dict
         
@@ -111,7 +111,10 @@ class TestExportModel():
         halo_val = [0, 22,22, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
-        tr_kwargs_val = json.dumps(config)
+        
+        yaml=YAML(typ='rt')
+        with open('test_data/config.json','r') as f:
+            tr_kwargs_val = yaml.load(f)
  
         yml_dict = {
             'language': 'python',
@@ -158,7 +161,6 @@ class TestExportModel():
             }
         }
         
-        yaml=YAML(typ='rt')
         yaml.default_flow_style=True
         with open('test.yml', 'w+') as outfile:
             yaml.dump(yml_dict, outfile)
@@ -171,14 +173,3 @@ class TestExportModel():
         with open('test.yml', 'r') as infile:
             read_yml = yaml.load(infile)
         assert read_yml == yml_dict
-        
-        
-    def test_read_example_yaml(self):
-        yaml=YAML(typ='rt')
-        with open('test_data/model.yaml','r') as f:
-            read_yml = yaml.load(f)
-        print(yaml.dump(read_yml, sys.stdout))
-        
-        yaml.default_flow_style=False
-        with open('test2.yml', 'w+') as outfile:
-            yaml.dump(read_yml, outfile)

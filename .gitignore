@@ -20,7 +20,7 @@ examples/**/models/
 *.tfevents.*
 config.json
 !tests/test_data/config.json
-config.yml
+model.yaml
 /.project
 history/
 
@@ -32,3 +32,4 @@ history/
 /.settings
 .pydevproject
 test.yml
+test*.yml

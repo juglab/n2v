@@ -15,7 +15,6 @@ import json
 import os
 import datetime
 import warnings
-
 from zipfile import ZipFile
 from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
@@ -432,7 +431,7 @@ class N2V(CARE):
             
         CARE.export_TF(self, fname=fname)
         yml_dict = self.get_yml_dict()
-        yml_file = self.logdir/'config.yml'
+        yml_file = self.logdir / 'model.yaml'
         
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
         yaml = YAML(typ='rt') 
@@ -472,9 +471,12 @@ class N2V(CARE):
         halo_val = [0, val1, val1, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
-        tr_kwargs_val = json.dumps(vars(self.config))
         
-        if (self.config.n_dim == 3) :
+        yaml = YAML(typ='rt')
+        with open(self.logdir/'config.json','r') as f:
+            tr_kwargs_val = yaml.load(f)
+        
+        if (self.config.n_dim == 3):
             min_val = [1, val, val, val, self.config.n_channel_in ]
             step_val = [1, val, val, val, 0]
             halo_val = [0, val1, val1, val1, 0]
@@ -485,14 +487,16 @@ class N2V(CARE):
             'language': 'python',
             'framework': 'tensorflow',
             'source': 'n2v / denoiseg',
+            'test_input': 'testinput.tif',
+            'test_output': 'testoutput.tif',
             'inputs': [{
                 'name': 'inputs',
                 'axes': 'axes_val',
                 'data_type': 'float32',
                 'data_range': in_data_range_val,
                 'shape': {
-                    'min': 'min_val',
-                    'step': 'step_val'
+                    'min': min_val,
+                    'step': step_val
                 }
             }],
             'outputs': [{ 
@@ -511,18 +515,18 @@ class N2V(CARE):
                 'kwargs': tr_kwargs_val
             },
             'prediction': {
-                'preprocess': {
+                'preprocess': [{
                     'kwargs': { 
                         'mean': mean_val,
                         'stdDev': std_val
                     }
-                },
-                'postprocess': {
+                }],
+                'postprocess': [{
                     'kwargs': { 
                         'mean': mean_val1,
                         'stdDev': std_val1
                     }
-                }
+                }]
             }
         }
         
