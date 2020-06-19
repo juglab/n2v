@@ -5,6 +5,7 @@ import json
 import numpy as np
 import shutil
 import os
+import sys
 import urllib.request
 from n2v.models import N2VConfig, N2V
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
@@ -87,18 +88,23 @@ class TestExportModel():
         assert my_yml == yml_dict
         
     def test_export_yaml(self):
-        with open('test_data/config.json','r') as f:
+        with open('tests/test_data/config.json','r') as f:
             config = json.load(f)
             
         mean_val = [] 
+        mean_val1 = [] 
         for ele in config['means']:
             mean_val.append(float(ele))
+            mean_val1.append(float(ele))
         std_val = [] 
+        std_val1 = [] 
         for ele in config['stds']:
             std_val.append(float(ele))
+            std_val1.append(float(ele))
         axes_val = 'b' + config['axes']
         axes_val = axes_val.lower()
-        data_range_val = ['-inf', 'inf']
+        in_data_range_val = ['-inf', 'inf']
+        out_data_range_val = ['-inf', 'inf']
         val = 2**config['unet_n_depth']
         val1 = 'some name'
         min_val = [1, val, val, config['n_channel_in']]
@@ -116,7 +122,7 @@ class TestExportModel():
                 'name': 'inputs',
                 'axes': 'axes_val',
                 'data_type': 'float32',
-                'data_range': data_range_val,
+                'data_range': in_data_range_val,
                 'shape': {
                     'min': 'min_val',
                     'step': 'step_val'
@@ -126,7 +132,7 @@ class TestExportModel():
                 'name': 'placeholder', 
                 'axes': 'axes_val',
                 'data_type': 'float32',
-                'data_range': data_range_val,
+                'data_range': out_data_range_val,
                 'halo': halo_val,
                 'shape': {
                     'scale': scale_val,
@@ -146,8 +152,8 @@ class TestExportModel():
                 },
                 'postprocess': {
                     'kwargs': { 
-                        'mean': mean_val,
-                        'stdDev': std_val
+                        'mean': mean_val1,
+                        'stdDev': std_val1
                     }
                 }
             }
@@ -158,7 +164,22 @@ class TestExportModel():
         with open('test.yml', 'w+') as outfile:
             yaml.dump(yml_dict, outfile)
             
+        yaml1=YAML(typ='rt')
+        yaml1.default_flow_style=False
+        with open('test1.yml', 'w+') as fout:
+            yaml1.dump(yml_dict, fout)
 
         with open('test.yml', 'r') as infile:
             read_yml = yaml.load(infile)
         assert read_yml == yml_dict
+        
+        
+    def test_read_example_yaml(self):
+        yaml=YAML(typ='rt')
+        with open('tests/test_data/model.yaml','r') as f:
+            read_yml = yaml.load(f)
+        print(yaml.dump(read_yml, sys.stdout))
+        
+        yaml.default_flow_style=False
+        with open('test2.yml', 'w+') as outfile:
+            yaml.dump(read_yml, outfile)

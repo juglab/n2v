@@ -447,15 +447,24 @@ class N2V(CARE):
     def get_yml_dict(self, patch_shape=None):
         if (patch_shape != None):
             self.config.patch_shape = patch_shape
+            
+        ''' Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used more than
+        once in the dictionary''' 
         mean_val = [] 
+        mean_val1 = [] 
         for ele in self.config.means:
             mean_val.append(float(ele))
+            mean_val1.append(float(ele))
         std_val = [] 
+        std_val1 = [] 
         for ele in self.config.stds:
             std_val.append(float(ele))
+            std_val2.append(float(ele))
+        in_data_range_val = ['-inf', 'inf']
+        out_data_range_val = ['-inf', 'inf']
+            
         axes_val = 'b' + self.config.axes
         axes_val = axes_val.lower()
-        data_range_val = ['-inf', 'inf']
         val = 2**self.config.unet_n_depth
         val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
         min_val = [1, val, val, self.config.n_channel_in ]
@@ -480,7 +489,7 @@ class N2V(CARE):
                 'name': 'inputs',
                 'axes': 'axes_val',
                 'data_type': 'float32',
-                'data_range': data_range_val,
+                'data_range': in_data_range_val,
                 'shape': {
                     'min': 'min_val',
                     'step': 'step_val'
@@ -490,7 +499,7 @@ class N2V(CARE):
                 'name': self.keras_model.layers[-1].name , 
                 'axes': 'axes_val',
                 'data_type': 'float32',
-                'data_range': data_range_val,
+                'data_range': out_data_range_val,
                 'halo': halo_val,
                 'shape': {
                     'scale': scale_val,
@@ -510,8 +519,8 @@ class N2V(CARE):
                 },
                 'postprocess': {
                     'kwargs': { 
-                        'mean': mean_val,
-                        'stdDev': std_val
+                        'mean': mean_val1,
+                        'stdDev': std_val1
                     }
                 }
             }
