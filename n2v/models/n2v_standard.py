@@ -459,7 +459,7 @@ class N2V(CARE):
         std_val1 = [] 
         for ele in self.config.stds:
             std_val.append(float(ele))
-            std_val2.append(float(ele))
+            std_val1.append(float(ele))
         in_data_range_val = ['-inf', 'inf']
         out_data_range_val = ['-inf', 'inf']
             
