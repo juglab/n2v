@@ -106,10 +106,9 @@ class TestExportModel():
         in_data_range_val = ['-inf', 'inf']
         out_data_range_val = ['-inf', 'inf']
         val = 2**config['unet_n_depth']
-        val1 = 'some name'
         min_val = [1, val, val, config['n_channel_in']]
         step_val = [1, val, val, 0]
-        halo_val = [0, val1, val1, 0]
+        halo_val = [0, 22,22, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
         tr_kwargs_val = json.dumps(config)
