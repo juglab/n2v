@@ -18,6 +18,7 @@ from ..utils import n2v_utils
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mae, loss_mse
 from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
+from n2v.nets.unet import build_single_unet_per_channel
 
 import numpy as np
 
@@ -92,18 +93,18 @@ class N2V(CARE):
 
     def _build(self):
         return self._build_unet(
-            n_dim           = self.config.n_dim,
-            n_channel_out   = self.config.n_channel_out,
-            residual        = self.config.unet_residual,
-            n_depth         = self.config.unet_n_depth,
-            kern_size       = self.config.unet_kern_size,
-            n_first         = self.config.unet_n_first,
-            last_activation = self.config.unet_last_activation,
-            batch_norm      = self.config.batch_norm
-        )(self.config.unet_input_shape)
+            n_dim                   = self.config.n_dim,
+            n_channel_out           = self.config.n_channel_out,
+            residual                = self.config.unet_residual,
+            n_depth                 = self.config.unet_n_depth,
+            kern_size               = self.config.unet_kern_size,
+            n_first                 = self.config.unet_n_first,
+            last_activation         = self.config.unet_last_activation,
+            batch_norm              = self.config.batch_norm
+        )(self.config.unet_input_shape, self.config.single_net_per_channel)
 
 
-    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, n_channel_out=1, residual=True, last_activation='linear', batch_norm=True):
+    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, n_channel_out=1, residual=True, last_activation='linear', batch_norm=True, single_net_per_channel=False):
         """Construct a common CARE neural net based on U-Net [1]_ and residual learning [2]_ to be used for image restoration/enhancement.
            Parameters
            ----------
@@ -137,8 +138,13 @@ class N2V(CARE):
            .. [2] Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun. *Deep Residual Learning for Image Recognition*, CVPR 2016
            """
 
-        def _build_this(input_shape):
-            return nets.custom_unet(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
+        def _build_this(input_shape, single_net_per_channel):
+            if single_net_per_channel:
+                return build_single_unet_per_channel(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
+                                              pool_size=(2,) * n_dim, residual=residual, prob_out=False,
+                                              batch_norm=batch_norm)
+            else:
+                return nets.custom_unet(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
                                pool_size=(2,) * n_dim, n_channel_out=n_channel_out, residual=residual,
                                prob_out=False, batch_norm=batch_norm)
 
