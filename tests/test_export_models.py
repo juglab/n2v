@@ -88,7 +88,7 @@ class TestExportModel():
         assert my_yml == yml_dict
         
     def test_export_yaml(self):
-        with open('tests/test_data/config.json','r') as f:
+        with open('test_data/config.json','r') as f:
             config = json.load(f)
             
         mean_val = [] 
@@ -176,7 +176,7 @@ class TestExportModel():
         
     def test_read_example_yaml(self):
         yaml=YAML(typ='rt')
-        with open('tests/test_data/model.yaml','r') as f:
+        with open('test_data/model.yaml','r') as f:
             read_yml = yaml.load(f)
         print(yaml.dump(read_yml, sys.stdout))
         
