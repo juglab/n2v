@@ -13,12 +13,13 @@ examples/**/models/
 *.npz
 *.npy
 *.tif*
+!flybrain_lzw.tiff
 *.hdf5
 *.h5
 *.zip
-!flybrain_lzw.tiff
 *.tfevents.*
 config.json
+!tests/test_data/config.json
 config.yml
 /.project
 history/
@@ -30,3 +31,4 @@ history/
 .pydevproject
 /.settings
 .pydevproject
+test.yml

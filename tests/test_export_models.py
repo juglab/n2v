@@ -1,13 +1,18 @@
 import pytest
-import yaml
+from ruamel.yaml import YAML
+import itertools
+import json
+import numpy as np
+import shutil
+import os
+import urllib.request
 from n2v.models import N2VConfig, N2V
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
-import urllib.request
-import os
 from zipfile import ZipFile
-import shutil
 
 class TestExportModel():
+    
+
     
     def setup_class(self):
         print('Setting up')
@@ -49,9 +54,11 @@ class TestExportModel():
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
         model.export_TF()
-        with ZipFile('models/n2v_2D_RGB/export.modelzoo.zip', 'r') as myzip:
+        with ZipFile('models/n2v_2D_RGB/export.bioimage.io.zip', 'r') as myzip:
             myzip.extract('config.yml', 'models/n2v_2D_RGB/extracted')
         my_yml = model.get_yml_dict(patch_shape=config.n2v_patch_shape)
+        
+        yaml=YAML(typ='rt') 
         with open('models/n2v_2D_RGB/extracted/config.yml', 'r') as infile:
             yml_dict = yaml.load(infile)
         assert my_yml == yml_dict
@@ -71,9 +78,87 @@ class TestExportModel():
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
         model.export_TF()
-        with ZipFile('models/n2v_2D_SEM/export.modelzoo.zip', 'r') as myzip:
+        with ZipFile('models/n2v_2D_SEM/export.bioimage.io.zip', 'r') as myzip:
             myzip.extract('config.yml', 'models/n2v_2D_SEM/extracted')
         my_yml = model.get_yml_dict()
+        yaml=YAML(typ='rt')
         with open('models/n2v_2D_SEM/extracted/config.yml', 'r') as infile:
             yml_dict = yaml.load(infile)
         assert my_yml == yml_dict
+        
+    def test_export_yaml(self):
+        with open('test_data/config.json','r') as f:
+            config = json.load(f)
+            
+        mean_val = [] 
+        for ele in config['means']:
+            mean_val.append(float(ele))
+        std_val = [] 
+        for ele in config['stds']:
+            std_val.append(float(ele))
+        axes_val = 'b' + config['axes']
+        axes_val = axes_val.lower()
+        data_range_val = ['-inf', 'inf']
+        val = 2**config['unet_n_depth']
+        val1 = 'some name'
+        min_val = [1, val, val, config['n_channel_in']]
+        step_val = [1, val, val, 0]
+        halo_val = [0, val1, val1, 0]
+        scale_val = [1, 1, 1, 1]
+        offset_val = [0, 0, 0, 0]
+        tr_kwargs_val = json.dumps(config)
+ 
+        yml_dict = {
+            'language': 'python',
+            'framework': 'tensorflow',
+            'source': 'n2v / denoiseg',
+            'inputs': [{
+                'name': 'inputs',
+                'axes': 'axes_val',
+                'data_type': 'float32',
+                'data_range': data_range_val,
+                'shape': {
+                    'min': 'min_val',
+                    'step': 'step_val'
+                }
+            }],
+            'outputs': [{ 
+                'name': 'placeholder', 
+                'axes': 'axes_val',
+                'data_type': 'float32',
+                'data_range': data_range_val,
+                'halo': halo_val,
+                'shape': {
+                    'scale': scale_val,
+                    'offset': offset_val
+                }
+            }],
+            'training': {
+                'source': 'n2v.train()',
+                'kwargs': tr_kwargs_val
+            },
+            'prediction': {
+                'preprocess': {
+                    'kwargs': { 
+                        'mean': mean_val,
+                        'stdDev': std_val
+                    }
+                },
+                'postprocess': {
+                    'kwargs': { 
+                        'mean': mean_val,
+                        'stdDev': std_val
+                    }
+                }
+            }
+        }
+        
+        yaml=YAML(typ='rt')
+        yaml.default_flow_style=True
+        with open('test.yml', 'w+') as outfile:
+            yaml.dump(yml_dict, outfile)
+            
+
+        with open('test.yml', 'r') as infile:
+            read_yml = yaml.load(infile)
+        assert read_yml == yml_dict

@@ -1,6 +1,6 @@
 import pytest
+from _pytest.outcomes import fail
 import tifffile
-from PIL import Image
 
 '''
  Original non compressed file can be downloaded from https://imagej.nih.gov/ij/images/flybrain.zip
@@ -9,9 +9,9 @@ from PIL import Image
 class TestLZWCompressedTiff():
  
     def test_tifffile(self):
-        image_lzw = 'flybrain_lzw.tiff'
-        tifffile.imread(image_lzw)
+        image_lzw = 'test_data/flybrain_lzw.tiff'
+        try:
+            tifffile.imread(image_lzw)
+        except Exception as e:
+            fail(msg='Unable to read LZW compressed TIFF')
         
-    def test_pillow(self):
-        image_lzw = 'flybrain_lzw.tiff'
-        im1 = Image.open(image_lzw)

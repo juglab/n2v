@@ -10,10 +10,9 @@ from csbdeep.data import PadAndCropResizer
 from keras.callbacks import TerminateOnNaN
 import tensorflow as tf
 from keras import backend as K
-import yaml
+from ruamel.yaml import YAML
 import json
 import os
-
 import datetime
 import warnings
 
@@ -426,16 +425,21 @@ class N2V(CARE):
     
     @suppress_without_basedir(warn=True)
     def export_TF(self, fname=None):
+        if fname is None:
+            fname = self.logdir / 'export.bioimage.io.zip'
+        else:
+            fname = Path(fname)
+            
         CARE.export_TF(self, fname=fname)
         yml_dict = self.get_yml_dict()
         yml_file = self.logdir/'config.yml'
+        
+        '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
+        yaml = YAML(typ='rt') 
+        yaml.default_flow_style = True
         with open(yml_file, 'w') as outfile:
-            yaml.dump(yml_dict, outfile, default_flow_style=False, sort_keys=False)
+            yaml.dump(yml_dict, outfile)
             
-        if fname is None:
-            fname = self.logdir / 'export.modelzoo.zip'
-        else:
-            fname = Path(fname)
             
         with ZipFile(fname, 'a') as myzip:
             myzip.write(yml_file, arcname=os.path.basename(yml_file))
@@ -443,66 +447,76 @@ class N2V(CARE):
     def get_yml_dict(self, patch_shape=None):
         if (patch_shape != None):
             self.config.patch_shape = patch_shape
-        v1 = np.asarray(self.config.means)
-        v2 = np.asarray(self.config.stds)
-        kwargs_val = '{ mean: ' + np.array2string(v1, separator=', ', formatter={'str_kind': lambda x: x}) + ', stdDev: ' + np.array2string(v2, separator=', ', formatter={'str_kind': lambda x: x}) + '}'
+        mean_val = [] 
+        for ele in self.config.means:
+            mean_val.append(float(ele))
+        std_val = [] 
+        for ele in self.config.stds:
+            std_val.append(float(ele))
         axes_val = 'b' + self.config.axes
         axes_val = axes_val.lower()
-        data_range_val = '[-inf, inf]'
-        val = 2**self.config.unet_n_depth 
+        data_range_val = ['-inf', 'inf']
+        val = 2**self.config.unet_n_depth
         val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
         min_val = [1, val, val, self.config.n_channel_in ]
         step_val = [1, val, val, 0]
         halo_val = [0, val1, val1, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
+        tr_kwargs_val = json.dumps(vars(self.config))
+        
         if (self.config.n_dim == 3) :
             min_val = [1, val, val, val, self.config.n_channel_in ]
             step_val = [1, val, val, val, 0]
             halo_val = [0, val1, val1, val1, 0]
             scale_val = [1, 1, 1, 1, 1]
             offset_val = [0, 0, 0, 0, 0]
+ 
+        yml_dict = {
+            'language': 'python',
+            'framework': 'tensorflow',
+            'source': 'n2v / denoiseg',
+            'inputs': [{
+                'name': 'inputs',
+                'axes': 'axes_val',
+                'data_type': 'float32',
+                'data_range': data_range_val,
+                'shape': {
+                    'min': 'min_val',
+                    'step': 'step_val'
+                }
+            }],
+            'outputs': [{ 
+                'name': self.keras_model.layers[-1].name , 
+                'axes': 'axes_val',
+                'data_type': 'float32',
+                'data_range': data_range_val,
+                'halo': halo_val,
+                'shape': {
+                    'scale': scale_val,
+                    'offset': offset_val
+                }
+            }],
+            'training': {
+                'source': 'n2v.train()',
+                'kwargs': tr_kwargs_val
+            },
+            'prediction': {
+                'preprocess': {
+                    'kwargs': { 
+                        'mean': mean_val,
+                        'stdDev': std_val
+                    }
+                },
+                'postprocess': {
+                    'kwargs': { 
+                        'mean': mean_val,
+                        'stdDev': std_val
+                    }
+                }
+            }
+        }
         
-        tr_kwargs_val = json.dumps(vars(self.config))
-        
-        yml_dict = dict(
-            language = 'python',
-            framework = 'tensorflow',
-            source = 'n2v / denoiseg',
-            inputs = dict (
-                name = 'inputs',
-                axes = axes_val,
-                data_type = 'float32',
-                data_range = data_range_val,
-                shape = dict (
-                    min = str(min_val),
-                    step = str(step_val)
-                )
-            ),
-            outputs = dict ( 
-                name = self.keras_model.layers[-1].name , 
-                axes = axes_val,
-                data_type = 'float32',
-                data_range = data_range_val.replace("'",""),
-                halo = str(halo_val),
-                shape = dict (
-                    scale = str(scale_val),
-                    offset = str(offset_val)
-                )
-            ),
-            training = dict (
-                source = 'n2v.train()',
-                kwargs = tr_kwargs_val
-            ),
-            prediction = dict (
-                preprocess = dict (
-                    kwargs = kwargs_val
-                ),
-                postprocess = dict (
-                    kwargs = kwargs_val
-                )
-            )
-        )
         return yml_dict
 
         
