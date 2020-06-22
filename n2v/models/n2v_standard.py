@@ -435,7 +435,7 @@ class N2V(CARE):
         
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
         yaml = YAML(typ='rt') 
-        yaml.default_flow_style = True
+        yaml.default_flow_style = False
         with open(yml_file, 'w') as outfile:
             yaml.dump(yml_dict, outfile)
             
@@ -486,6 +486,7 @@ class N2V(CARE):
         yml_dict = {
             'language': 'python',
             'framework': 'tensorflow',
+            'version': '0.2.0-csbdeep',
             'source': 'n2v / denoiseg',
             'test_input': 'testinput.tif',
             'test_output': 'testoutput.tif',

@@ -161,7 +161,7 @@ class TestExportModel():
             }
         }
         
-        yaml.default_flow_style=True
+        yaml.default_flow_style=False
         with open('test.yml', 'w+') as outfile:
             yaml.dump(yml_dict, outfile)
             
