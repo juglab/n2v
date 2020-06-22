@@ -494,6 +494,7 @@ class N2V(CARE):
                 'axes': 'axes_val',
                 'data_type': 'float32',
                 'data_range': in_data_range_val,
+                'halo': halo_val,
                 'shape': {
                     'min': min_val,
                     'step': step_val
@@ -504,7 +505,6 @@ class N2V(CARE):
                 'axes': 'axes_val',
                 'data_type': 'float32',
                 'data_range': out_data_range_val,
-                'halo': halo_val,
                 'shape': {
                     'scale': scale_val,
                     'offset': offset_val
