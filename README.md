@@ -69,5 +69,5 @@ Have a look at our jupyter notebook:
 }
 ```
 
-see [here](https://github.com/mpicbg-csbd/structured_N2V_paper) for citing `StructN2V`.
+see [here](https://github.com/mpicbg-csbd/structured_N2V) for more info on `StructN2V`.
 
