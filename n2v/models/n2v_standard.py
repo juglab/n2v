@@ -491,6 +491,8 @@ class N2V(CARE):
             myzip.write(input_file, arcname=os.path.basename(input_file))
             myzip.write(output_file, arcname=os.path.basename(output_file))
             
+        print("\nModel exported in BioImage ModelZoo format:\n%s" % str(fname.resolve()))
+            
     
     def get_yml_dict(self, name, description, authors, test_img, axes, patch_shape=None):
         if (patch_shape != None):
@@ -547,7 +549,7 @@ class N2V(CARE):
             'test_input': 'testinput.tif',
             'test_output': 'testoutput.tif',
             'inputs': [{
-                'name': 'inputs',
+                'name': 'input',
                 'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': in_data_range_val,
@@ -558,11 +560,12 @@ class N2V(CARE):
                 }
             }],
             'outputs': [{ 
-                'name': self.keras_model.layers[-1].name , 
+                'name': self.keras_model.layers[-1].output.name , 
                 'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': out_data_range_val,
                 'shape': {
+                    'reference_input': 'input',
                     'scale': scale_val,
                     'offset': offset_val
                 }
@@ -572,6 +575,7 @@ class N2V(CARE):
                 'kwargs': tr_kwargs_val
             },
             'prediction': {
+                'weights': {'source': './variables/variables'},
                 'preprocess': [{
                     'kwargs': { 
                         'mean': mean_val,
