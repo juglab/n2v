@@ -544,7 +544,7 @@ class N2V(CARE):
             'authors': authors,
             'language': 'python',
             'framework': 'tensorflow',
-            'format_version': '0.2.0',
+            'format_version': '0.2.0-csbdeep',
             'source': 'n2v',
             'test_input': 'testinput.tif',
             'test_output': 'testoutput.tif',
