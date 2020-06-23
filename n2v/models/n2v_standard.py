@@ -445,11 +445,14 @@ class N2V(CARE):
         else:
             fname = Path(fname)
             
-        assert len(test_img.shape) == self.config.n_dim, 'Input and network dimensions do not match.'
-        assert test_img.shape[-1] == test_img.shape[-2], 'X and Y dimensions are not of same length.'    
+        input_n_dims = len(test_img.shape)
+        if 'C' in axes:
+            input_n_dims -=1 
+        assert input_n_dims == self.config.n_dim, 'Input and network dimensions do not match.'
+        assert test_img.shape[axes.index('X')] == test_img.shape[axes.index('Y')], 'X and Y dimensions are not of same length.'    
         test_output = self.predict(test_img, axes) 
         # Extract central slice of Z-Stack
-        if len(test_output.shape) > 2:
+        if 'Z' in axes:
             z_dim = axes.index('Z')
             if z_dim != 0:
                 test_output = np.moveaxis(test_output, z_dim, 0)
