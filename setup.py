@@ -54,7 +54,7 @@ setup(name='n2v',
           "tqdm",
           "pathlib2;python_version<'3'",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep>=0.4.0,<0.5.0",
+          "csbdeep>=0.4.0,<0.6.0",
           "Pillow",
           "ruamel.yaml>=0.16.10"
         ]
