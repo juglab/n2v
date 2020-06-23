@@ -2,6 +2,7 @@ from csbdeep.models import CARE
 from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
 from csbdeep.internals import nets, predict
 from csbdeep.models.base_model import suppress_without_basedir
+from csbdeep.version import __version__ as package_version
 
 from six import string_types
 from csbdeep.utils.six import Path, FileNotFoundError
@@ -21,6 +22,12 @@ from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mse, loss_mae 
 from ..utils import n2v_utils
 from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
+from n2v.nets.unet import build_single_unet_per_channel
+
+from tifffile import imsave
+import keras
+from csbdeep.utils.six import tempfile
+import shutil
 
 import numpy as np
 
@@ -423,14 +430,46 @@ class N2V(CARE):
             save_json(vars(self.config), str(config_file))
     
     @suppress_without_basedir(warn=True)
-    def export_TF(self, fname=None):
+    def export_TF(self, name, description, authors, test_img, axes, patch_shape, fname=None):
+        """
+        name: String
+            Name of the model. 
+        description: String
+            A short description of the model e.g. on what data it was trained.
+        authors: String
+            Comma seperated list of author names.
+        patch_shape: The shape of the patches used in model.train().
+        """
         if fname is None:
             fname = self.logdir / 'export.bioimage.io.zip'
         else:
             fname = Path(fname)
             
-        CARE.export_TF(self, fname=fname)
-        yml_dict = self.get_yml_dict()
+        assert len(test_img.shape) == self.config.n_dim, 'Input and network dimensions do not match.'
+        assert test_img.shape[-1] == test_img.shape[-2], 'X and Y dimensions are not of same length.'    
+        test_output = self.predict(test_img, axes) 
+        # Extract central slice of Z-Stack
+        if len(test_output.shape) > 2:
+            z_dim = axes.index('Z')
+            if z_dim != 0:
+                test_output = np.moveaxis(test_output, z_dim, 0)
+            test_output = test_output[int(test_output.shape[0]/2)]
+        
+        # CSBDeep Export
+        meta = {
+            'type':          self.__class__.__name__,
+            'version':       package_version,
+            'probabilistic': self.config.probabilistic,
+            'axes':          self.config.axes,
+            'axes_div_by':   self._axes_div_by(self.config.axes),
+            'tile_overlap':  self._axes_tile_overlap(self.config.axes),
+        }
+        export_SavedModel(self.keras_model, str(fname), meta=meta)
+        # CSBDeep Export Done
+        
+        # Replace : with -
+        name = name.replace(':', ' -')
+        yml_dict = self.get_yml_dict(name, description, authors, test_img, axes, patch_shape=patch_shape)
         yml_file = self.logdir / 'model.yaml'
         
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
@@ -439,11 +478,18 @@ class N2V(CARE):
         with open(yml_file, 'w') as outfile:
             yaml.dump(yml_dict, outfile)
             
+        input_file = self.logdir / 'testinput.tif'
+        output_file = self.logdir / 'testoutput.tif'
+        imsave(input_file, test_img)
+        imsave(output_file, test_output)
             
         with ZipFile(fname, 'a') as myzip:
             myzip.write(yml_file, arcname=os.path.basename(yml_file))
+            myzip.write(input_file, arcname=os.path.basename(input_file))
+            myzip.write(output_file, arcname=os.path.basename(output_file))
+            
     
-    def get_yml_dict(self, patch_shape=None):
+    def get_yml_dict(self, name, description, authors, test_img, axes, patch_shape=None):
         if (patch_shape != None):
             self.config.patch_shape = patch_shape
             
@@ -484,15 +530,22 @@ class N2V(CARE):
             offset_val = [0, 0, 0, 0, 0]
  
         yml_dict = {
+            'name': name,
+            'description': description,
+            'cite': [{
+                'text': 'Krull, A. and Buchholz, T. and Jug, F. Noise2void - learning denoising from single noisy images.\nProceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2019)',
+                'doi': '10.1109/CVPR.2019.00223'
+            }],
+            'authors': authors,
             'language': 'python',
             'framework': 'tensorflow',
-            'version': '0.2.0-csbdeep',
-            'source': 'n2v / denoiseg',
+            'format_version': '0.2.0',
+            'source': 'n2v',
             'test_input': 'testinput.tif',
             'test_output': 'testoutput.tif',
             'inputs': [{
                 'name': 'inputs',
-                'axes': 'axes_val',
+                'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': in_data_range_val,
                 'halo': halo_val,
@@ -503,7 +556,7 @@ class N2V(CARE):
             }],
             'outputs': [{ 
                 'name': self.keras_model.layers[-1].name , 
-                'axes': 'axes_val',
+                'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': out_data_range_val,
                 'shape': {
@@ -532,8 +585,64 @@ class N2V(CARE):
         }
         
         return yml_dict
-
         
     @property
     def _config_class(self):
         return N2VConfig
+
+    
+def export_SavedModel(model, outpath, meta={}, format='zip'):
+    """Export Keras model in TensorFlow's SavedModel_ format.
+    See `Your Model in Fiji`_ to learn how to use the exported model with our CSBDeep Fiji plugins.
+    .. _SavedModel: https://www.tensorflow.org/programmers_guide/saved_model#structure_of_a_savedmodel_directory
+    .. _`Your Model in Fiji`: https://github.com/CSBDeep/CSBDeep_website/wiki/Your-Model-in-Fiji
+    Parameters
+    ----------
+    model : :class:`keras.models.Model`
+        Keras model to be exported.
+    outpath : str
+        Path of the file/folder that the model will exported to.
+    meta : dict, optional
+        Metadata to be saved in an additional ``meta.json`` file.
+    format : str, optional
+        Can be 'dir' to export as a directory or 'zip' (default) to export as a ZIP file.
+    Raises
+    ------
+    ValueError
+        Illegal arguments.
+    """
+
+    def export_to_dir(dirname):
+        if len(model.inputs) > 1 or len(model.outputs) > 1:
+            warnings.warn('Found multiple input or output layers.')
+        builder = tf.saved_model.builder.SavedModelBuilder(dirname)
+        # use name 'input'/'output' if there's just a single input/output layer
+        inputs  = dict(zip(model.input_names,model.inputs))   if len(model.inputs)  > 1 else dict(input=model.input)
+        outputs = dict(zip(model.output_names,model.outputs)) if len(model.outputs) > 1 else dict(output=model.output)
+        signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs=inputs, outputs=outputs)
+        signature_def_map = { tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature }
+        builder.add_meta_graph_and_variables(K.get_session(),
+                                             [tf.saved_model.tag_constants.SERVING],
+                                             signature_def_map=signature_def_map)
+        builder.save()
+        if meta is not None and len(meta) > 0:
+            save_json(meta, os.path.join(dirname,'meta.json'))
+
+
+    ## checks
+    isinstance(model,keras.models.Model) or _raise(ValueError("'model' must be a Keras model."))
+    # supported_formats = tuple(['dir']+[name for name,description in shutil.get_archive_formats()])
+    supported_formats = 'dir','zip'
+    format in supported_formats or _raise(ValueError("Unsupported format '%s', must be one of %s." % (format,str(supported_formats))))
+
+    # remove '.zip' file name extension if necessary
+    if format == 'zip' and outpath.endswith('.zip'):
+        outpath = os.path.splitext(outpath)[0]
+
+    if format == 'dir':
+        export_to_dir(outpath)
+    else:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpsubdir = os.path.join(tmpdir,'model')
+            export_to_dir(tmpsubdir)
+            shutil.make_archive(outpath, format, tmpsubdir, './')
