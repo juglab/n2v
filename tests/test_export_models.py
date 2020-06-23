@@ -54,10 +54,18 @@ class TestExportModel():
         basedir = 'models'
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
-        model.export_TF()
+        model.export_TF(name='Testing', 
+                description='PyTest 2D RGB.', 
+                authors=["Gabriella Turek", "Tim-Oliver Buchholz"],
+                test_img=X_val[0], axes='YXC',
+                patch_shape=(128,128))
         with ZipFile('models/n2v_2D_RGB/export.bioimage.io.zip', 'r') as myzip:
             myzip.extract('model.yaml', 'models/n2v_2D_RGB/extracted')
-        my_yml = model.get_yml_dict(patch_shape=config.n2v_patch_shape)
+        my_yml = model.get_yml_dict(name='Testing', 
+                description='PyTest 2D RGB.', 
+                authors=["Gabriella Turek", "Tim-Oliver Buchholz"],
+                test_img=X_val[0], axes='YXC',
+                patch_shape=(128,128))
         
         yaml=YAML(typ='rt') 
         with open('models/n2v_2D_RGB/extracted/model.yaml', 'r') as infile:
@@ -78,10 +86,18 @@ class TestExportModel():
         basedir = 'models'
         model = N2V(config, model_name, basedir=basedir)
         model.train(X, X_val)
-        model.export_TF()
+        model.export_TF(name='Testing', 
+                description='PyTest 2D SEM', 
+                authors=["Gabriella Turek", "Tim-Oliver Buchholz"],
+                test_img=X_val[0,...,0], axes='YX',
+                patch_shape=(128,128))
         with ZipFile('models/n2v_2D_SEM/export.bioimage.io.zip', 'r') as myzip:
             myzip.extract('model.yaml', 'models/n2v_2D_SEM/extracted')
-        my_yml = model.get_yml_dict()
+        my_yml = model.get_yml_dict(name='Testing', 
+                description='PyTest 2D SEM', 
+                authors=["Gabriella Turek", "Tim-Oliver Buchholz"],
+                test_img=X_val[0,...,0], axes='YX',
+                patch_shape=(128,128))
         yaml=YAML(typ='rt')
         with open('models/n2v_2D_SEM/extracted/model.yaml', 'r') as infile:
             yml_dict = yaml.load(infile)
