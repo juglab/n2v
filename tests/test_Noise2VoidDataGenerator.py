@@ -9,7 +9,7 @@ def test_generate_patches_2D():
     if not os.path.isdir('data'):
         os.mkdir('data')
     zip_path = "data/RGB.zip"
-    if not os.path.exists(zip_path):
+    if not os.path.isfile(zip_path):
         data = urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/Frru2hsjjAljpfW/download', zip_path)
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
             zip_ref.extractall('data')
@@ -30,7 +30,7 @@ def test_generate_patches_3D():
     if not os.path.isdir('data'):
         os.mkdir('data')
     zip_path = 'data/flywing-data.zip'
-    if not os.path.exists(zip_path):
+    if not os.path.isfile(zip_path):
         # download and unzip data
         data = urllib.request.urlretrieve('https://cloud.mpi-cbg.de/index.php/s/RKStdwKo4FlFrxE/download', zip_path)
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
@@ -38,7 +38,7 @@ def test_generate_patches_3D():
 
     datagen = N2V_DataGenerator()
 
-    imgs = datagen.load_imgs_from_directory(directory="data", filter='*.tif', dims='ZYX')
+    imgs = datagen.load_imgs_from_directory(directory="data", filter='flywing.tif', dims='ZYX')
     print(imgs[0].shape)
     patches = datagen.generate_patches_from_list(imgs[:1], shape=(35, 520, 692))
     assert len(patches) == 1

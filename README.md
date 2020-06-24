@@ -71,3 +71,8 @@ Have a look at our jupyter notebook:
 
 see [here](https://github.com/mpicbg-csbd/structured_N2V) for more info on `StructN2V`.
 
+## Note on functional tests
+
+The functional "tests" are meant to be run as regular programs. They are there to make sure that
+examples are still running after changes.
+

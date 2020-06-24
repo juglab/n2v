@@ -1,7 +1,6 @@
 __pycache__/
 *.py[cod]
 .idea
-
 .DS_Store
 .ipynb_checkpoints
 .pytest_cache
@@ -10,18 +9,27 @@ build/
 dist/
 docs/build/
 examples/**/models/
-
 *.png
 *.npz
 *.npy
 *.tif*
+!flybrain_lzw.tiff
 *.hdf5
 *.h5
 *.zip
 *.tfevents.*
 config.json
-
+!tests/test_data/config.json
+model.yaml
 /.project
 history/
 
 .cache/
+.pydevproject
+.settings/org.python.pydev.yaml
+.settings/org.eclipse.core.resources.prefs
+.pydevproject
+/.settings
+.pydevproject
+test.yml
+test*.yml
