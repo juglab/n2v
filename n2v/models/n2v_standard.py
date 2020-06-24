@@ -22,7 +22,7 @@ from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mse, loss_mae 
 from ..utils import n2v_utils
 from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
-from n2v.nets.unet import build_single_unet_per_channel
+from ..nets.unet import build_single_unet_per_channel
 
 from tifffile import imsave
 import keras
