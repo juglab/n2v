@@ -76,3 +76,6 @@ see [here](https://github.com/mpicbg-csbd/structured_N2V) for more info on `Stru
 The functional "tests" are meant to be run as regular programs. They are there to make sure that
 examples are still running after changes.
 
+## Note on GPU Memory Allocation
+
+In some [cases](https://github.com/juglab/n2v/issues/100) tensorflow is unable to allocate GPU memory and fails. One possible solution could be to set the following environment variable: `export TF_FORCE_GPU_ALLOW_GROWTH=true`
