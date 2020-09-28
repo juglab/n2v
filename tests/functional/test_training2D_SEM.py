@@ -5,7 +5,6 @@ import numpy as np
 from csbdeep.utils import plot_history
 from n2v.utils.n2v_utils import manipulate_val_data
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
-from matplotlib import pyplot as plt
 import urllib
 import os
 import zipfile
@@ -30,30 +29,11 @@ imgs = datagen.load_imgs_from_directory(directory = "data/")
    
 # Let's look at the shape of the images.
 print(imgs[0].shape,imgs[1].shape)
-# The function automatically added two extra dimensions to the images:
-# One at the beginning, is used to hold a potential stack of images such as a movie.
-# One at the end, represents channels.
-# Lets' look at the images
-# We have to remove the added extra dimensions to display them as 2D images.
-#plt.imshow(imgs[0][0,...,0], cmap='magma')
-#plt.show()
-#plt.imshow(imgs[1][0,...,0], cmap='magma')
-#plt.show()"
 
 # We will use the first image to extract training patches and store them in 'X'
 X = datagen.generate_patches_from_list(imgs[:1], shape=(96,96))
 # We will use the second image to extract validation patches
 X_val = datagen.generate_patches_from_list(imgs[1:], shape=(96,96))
-
-# Let's look at one of our training and validation patches.
-#plt.figure(figsize=(14,7))
-#plt.subplot(1,2,1)
-#plt.imshow(X[0,...,0], cmap='magma')
-#plt.title('Training Patch')
-#plt.subplot(1,2,2)
-#plt.imshow(X_val[0,...,0], cmap='magma')
-#plt.title('Validation Patch')
-#plt.show()
 
 # You can increase "train_steps_per_epoch" to get even better results at the price of longer computation.
 config = N2VConfig(X, unet_kern_size=3,
@@ -73,6 +53,3 @@ model = N2V(config, model_name, basedir=basedir)
 # We are ready to start training now.
 history = model.train(X, X_val)
 print(sorted(list(history.history.keys())))
-#plt.figure(figsize=(16,5))
-#plot_history(history,['loss','val_loss'])
-#plt.show()

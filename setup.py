@@ -48,14 +48,14 @@ setup(name='n2v',
           "scipy",
           "matplotlib",
           "six",
-          "keras>=2.2.4,<2.3.0",
+          "csbdeep>=0.6.0",
+          "tensorflow>=2.3.0",
           "tifffile>=2020.5.11",
           "imagecodecs>=2020.2.18",
           "tqdm",
           "pathlib2;python_version<'3'",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep>=0.4.0,<0.6.0",
           "Pillow",
-          "ruamel.yaml>=0.16.10"
+          "ruamel.yaml>=0.15.87"
         ]
       )

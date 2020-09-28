@@ -8,9 +8,9 @@ from six import string_types
 from csbdeep.utils.six import Path, FileNotFoundError
 from csbdeep.data import PadAndCropResizer
 
-from keras.callbacks import TerminateOnNaN
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.python.keras.callbacks import TerminateOnNaN
+from tensorflow.python.keras import backend as K
 from ruamel.yaml import YAML
 import json
 import os
@@ -25,7 +25,6 @@ from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted,
 from ..nets.unet import build_single_unet_per_channel
 
 from tifffile import imsave
-import keras
 from csbdeep.utils.six import tempfile
 import shutil
 
@@ -208,9 +207,9 @@ class N2V(CARE):
             epochs = self.config.train_epochs
         if steps_per_epoch is None:
             steps_per_epoch = self.config.train_steps_per_epoch
-
+            
         if not self._model_prepared:
-            self.prepare_for_training()
+            self.prepare_for_training((X, validation_X))
 
         manipulator = eval('pm_{0}({1})'.format(self.config.n2v_manipulator, str(self.config.n2v_neighborhood_radius)))
 
@@ -218,7 +217,7 @@ class N2V(CARE):
         stds = np.array([float(std) for std in self.config.stds], ndmin=len(X.shape), dtype=np.float32)
 
         X = self.__normalize__(X, means, stds)
-        validation_X = self.__normalize__(validation_X, means, stds)
+        validation_X = self.__normalize__(validation_X, means, stds)       
 
         # Here we prepare the Noise2Void data. Our input is the noisy data X and as target we take X concatenated with
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
@@ -227,6 +226,7 @@ class N2V(CARE):
                                                     self.config.train_batch_size, self.config.n2v_perc_pix,
                                                     self.config.n2v_patch_shape, manipulator, structN2Vmask=_mask)
 
+            
         # validation_Y is also validation_X plus a concatenated masking channel.
         # To speed things up, we precompute the masking for the validation data.
         validation_Y = np.concatenate((validation_X, np.zeros(validation_X.shape, dtype=validation_X.dtype)), axis=axes.index('C'))
@@ -235,9 +235,8 @@ class N2V(CARE):
                                                         shape=val_patch_shape,
                                                         value_manipulation=manipulator)
 
-        history = self.keras_model.fit_generator(generator=training_data, validation_data=(validation_X, validation_Y),
-                                                 epochs=epochs, steps_per_epoch=steps_per_epoch,
-                                                 callbacks=self.callbacks, verbose=1)
+        history = self.keras_model.fit(x=training_data, epochs=epochs, steps_per_epoch=steps_per_epoch,
+                                                 callbacks=self.callbacks, validation_data=(validation_X, validation_Y))
 
         if self.basedir is not None:
             self.keras_model.save_weights(str(self.logdir / 'weights_last.h5'))
@@ -254,7 +253,7 @@ class N2V(CARE):
         return history
 
 
-    def prepare_for_training(self, optimizer=None, **kwargs):
+    def prepare_for_training(self, data, optimizer=None, **kwargs):
         """Prepare for neural network training.
 
         Calls :func:`csbdeep.internals.train.prepare_model` and creates
@@ -273,62 +272,29 @@ class N2V(CARE):
 
         """
         if optimizer is None:
-            from keras.optimizers import Adam
+            from tensorflow.keras.optimizers import Adam
             optimizer = Adam(lr=self.config.train_learning_rate)
         self.callbacks = self.prepare_model(self.keras_model, optimizer, self.config.train_loss, **kwargs)
 
         if self.basedir is not None:
             if self.config.train_checkpoint is not None:
-                from keras.callbacks import ModelCheckpoint
+                from tensorflow.python.keras.callbacks import ModelCheckpoint
                 self.callbacks.append(ModelCheckpoint(str(self.logdir / self.config.train_checkpoint), save_best_only=True,  save_weights_only=True))
                 self.callbacks.append(ModelCheckpoint(str(self.logdir / 'weights_now.h5'),             save_best_only=False, save_weights_only=True))
 
             if self.config.train_tensorboard:
-                from csbdeep.utils.tf import CARETensorBoard
-
-                class N2VTensorBoard(CARETensorBoard):
-                    def on_epoch_end(self, epoch, logs=None):
-                        logs = logs or {}
-
-                        if self.validation_data and self.freq:
-                            if epoch % self.freq == 0:
-                                # TODO: implement batched calls to sess.run
-                                # (current call will likely go OOM on GPU)
-                                tensors = self.model.inputs + self.gt_outputs + self.model.sample_weights
-                                if self.model.uses_learning_phase:
-                                    tensors += [K.learning_phase()]
-                                    val_data = list(v[:self.n_images] for v in self.validation_data[:-1])
-                                    val_data += self.validation_data[-1:]
-                                else:
-                                    val_data = list(v[:self.n_images] for v in self.validation_data)
-                                # GIT issue 20: We need to remove the masking component from the validation data to prevent crash.
-                                end_index = (val_data[1].shape)[-1]//2
-                                val_data[1] = val_data[1][...,:end_index]
-                                feed_dict = dict(zip(tensors, val_data))
-                                result = self.sess.run([self.merged], feed_dict=feed_dict)
-                                summary_str = result[0]
-
-                                self.writer.add_summary(summary_str, epoch)
-
-                        for name, value in logs.items():
-                            if name in ['batch', 'size']:
-                                continue
-                            summary = tf.Summary()
-                            summary_value = summary.value.add()
-                            summary_value.simple_value = value.item()
-                            summary_value.tag = name
-                            self.writer.add_summary(summary, epoch)
-
-                        self.writer.flush()
-
-                self.callbacks.append(N2VTensorBoard(log_dir=str(self.logdir), prefix_with_timestamp=False, n_images=3, write_images=True, prob_out=False))
+                from tensorflow.python.keras.callbacks import TensorBoard
+                self.callbacks.append(TensorBoard(log_dir=str(self.logdir/'logs'), write_graph=False, profile_batch=0))                
+                
+                from csbdeep.utils.tf import CARETensorBoardImage
+                self.callbacks.append(CARETensorBoardImage(self.keras_model, data, log_dir=str(self.logdir)))
 
         if self.config.train_reduce_lr is not None:
-            from keras.callbacks import ReduceLROnPlateau
+            from tensorflow.keras.callbacks import ReduceLROnPlateau
             rlrop_params = self.config.train_reduce_lr
             if 'verbose' not in rlrop_params:
                 rlrop_params['verbose'] = True
-            self.callbacks.append(ReduceLROnPlateau(**rlrop_params))
+            self.callbacks.insert(0, ReduceLROnPlateau(**rlrop_params))
 
         self._model_prepared = True
 
@@ -336,7 +302,7 @@ class N2V(CARE):
     def prepare_model(self, model, optimizer, loss, metrics=('mse', 'mae')):
         """ TODO """
 
-        from keras.optimizers import Optimizer
+        from tensorflow.keras.optimizers import Optimizer
         isinstance(optimizer, Optimizer) or _raise(ValueError())
 
 

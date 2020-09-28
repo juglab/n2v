@@ -36,11 +36,6 @@ print('shape of loaded images: ',imgs[0].shape)
 imgs[0] = imgs[0][...,:3]
 print('shape without alpha:    ',imgs[0].shape)
 
-# We have to remove the added extra dimension to display it as 2D image
-#plt.figure(figsize=(32,16))
-#plt.imshow(imgs[0][0,:,1000:3000,...])
-#plt.show()
-
 # Extract patches for training and validation
 # The parameter 'shape' defines the size of these patches
 patches = datagen.generate_patches_from_list(imgs, shape=(64,64))
@@ -51,14 +46,6 @@ patches = datagen.generate_patches_from_list(imgs, shape=(64,64))
 X = patches[:5000]
 X_val = patches[5000:]
 
-#plt.figure(figsize=(14,7))
-#plt.subplot(1,2,1)
-#plt.imshow(X[0,...])
-#plt.title('Training Patch')
-#plt.subplot(1,2,2)
-#plt.imshow(X_val[0,...])
-#plt.title('Validation Patch')
-#plt.show()
 
 # You can increase "train_steps_per_epoch" to get even better results at the price of longer computation
 config = N2VConfig(X, unet_kern_size=3,
@@ -75,6 +62,3 @@ basedir = 'models'
 model = N2V(config, model_name, basedir=basedir)
 history = model.train(X, X_val)
 print(sorted(list(history.history.keys())))
-#plt.figure(figsize=(16,5))
-#plot_history(history,['loss','val_loss'])
-#plt.show()

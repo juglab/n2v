@@ -1,2 +1,2 @@
-from csbdeep.utils.tf import CARETensorBoard
+from csbdeep.utils.tf import CARETensorBoardImages
 

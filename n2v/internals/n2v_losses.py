@@ -1,6 +1,5 @@
-import keras.backend as K
-
 import tensorflow as tf
+import tensorflow.python.keras.backend as K
 
 def loss_mse():
     def n2v_mse(y_true, y_pred):
