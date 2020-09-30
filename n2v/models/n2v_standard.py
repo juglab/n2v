@@ -9,8 +9,8 @@ from csbdeep.utils.six import Path, FileNotFoundError
 from csbdeep.data import PadAndCropResizer
 
 import tensorflow as tf
-from tensorflow.python.keras.callbacks import TerminateOnNaN
-from tensorflow.python.keras import backend as K
+from tensorflow.keras.callbacks import TerminateOnNaN
+from tensorflow.keras import backend as K
 from ruamel.yaml import YAML
 import json
 import os
@@ -209,7 +209,7 @@ class N2V(CARE):
             steps_per_epoch = self.config.train_steps_per_epoch
             
         if not self._model_prepared:
-            self.prepare_for_training((X, validation_X))
+            self.prepare_for_training((X,validationX))
 
         manipulator = eval('pm_{0}({1})'.format(self.config.n2v_manipulator, str(self.config.n2v_neighborhood_radius)))
 
@@ -278,12 +278,12 @@ class N2V(CARE):
 
         if self.basedir is not None:
             if self.config.train_checkpoint is not None:
-                from tensorflow.python.keras.callbacks import ModelCheckpoint
+                from tensorflow.keras.callbacks import ModelCheckpoint
                 self.callbacks.append(ModelCheckpoint(str(self.logdir / self.config.train_checkpoint), save_best_only=True,  save_weights_only=True))
                 self.callbacks.append(ModelCheckpoint(str(self.logdir / 'weights_now.h5'),             save_best_only=False, save_weights_only=True))
 
             if self.config.train_tensorboard:
-                from tensorflow.python.keras.callbacks import TensorBoard
+                from tensorflow.keras.callbacks import TensorBoard
                 self.callbacks.append(TensorBoard(log_dir=str(self.logdir/'logs'), write_graph=False, profile_batch=0))                
                 
                 from csbdeep.utils.tf import CARETensorBoardImage
