@@ -1,32 +1,21 @@
-# As a general rule, the latest release of Keras is compatible with the latest
-# release of TensorFlow as well as the previous release of TensorFlow (in most
-# cases, it is actually compatible with several prior TF releases, but that is
-# not guaranteed).
-#
-# -- https://github.com/keras-team/keras/issues/10440#issuecomment-397428200
-
 language: python
 
 env:
-  - TENSORFLOW='tensorflow' KERAS='keras'
+  - TENSORFLOW='tensorflow'
 
 matrix:
   include:
     - os: linux
       dist: bionic
-      python: 3.6
-      env: TENSORFLOW='tensorflow==1.14.0' KERAS='keras==2.2.5'
-    - os: linux
-      dist: bionic
-      python: 3.6
-      env: TENSORFLOW='tensorflow==1.12.0' KERAS='keras==2.2.5'
+      python: 3.7
+      env: TENSORFLOW='tensorflow==2.3.0'
     - os: linux
       dist: bionic
       python: 3.7
-      env: TENSORFLOW='tensorflow==1.14.0' KERAS='keras==2.2.5'
+      env: TENSORFLOW='tensorflow==2.1.0'
 
 install:
-  - pip install $TENSORFLOW $KERAS
+  - pip install $TENSORFLOW
   - pip install .
 
 script:
