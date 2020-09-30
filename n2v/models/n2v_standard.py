@@ -209,7 +209,7 @@ class N2V(CARE):
             steps_per_epoch = self.config.train_steps_per_epoch
             
         if not self._model_prepared:
-            self.prepare_for_training((X,validationX))
+            self.prepare_for_training((X,validation_X))
 
         manipulator = eval('pm_{0}({1})'.format(self.config.n2v_manipulator, str(self.config.n2v_neighborhood_radius)))
 
