@@ -1,8 +1,9 @@
-from keras.utils import Sequence
+from csbdeep.internals.train import RollingSequence
+from tensorflow.keras.utils import Sequence
 
 import numpy as np
 
-class N2V_DataWrapper(Sequence):
+class N2V_DataWrapper(RollingSequence):
     """
     The N2V_DataWrapper extracts random sub-patches from the given data and manipulates 'num_pix' pixels in the
     input.
@@ -23,8 +24,9 @@ class N2V_DataWrapper(Sequence):
                         The manipulator used for the pixel replacement.
     """
 
-    def __init__(self, X, Y, batch_size, perc_pix=0.198, shape=(64, 64),
+    def __init__(self, X, Y, batch_size, length, perc_pix=0.198, shape=(64, 64),
                  value_manipulation=None, structN2Vmask=None):
+        super(N2V_DataWrapper, self).__init__(data_size=len(X), batch_size=batch_size, length=length)
         self.X, self.Y = X, Y
         self.batch_size = batch_size
         self.perm = np.random.permutation(len(self.X))
@@ -54,24 +56,23 @@ class N2V_DataWrapper(Sequence):
         else:
             raise Exception('Dimensionality not supported.')
 
-        self.X_Batches = np.zeros((self.X.shape[0], *self.shape, self.n_chan), dtype=np.float32)
-        self.Y_Batches = np.zeros((self.Y.shape[0], *self.shape, 2*self.n_chan), dtype=np.float32)
-
-    def __len__(self):
-        return int(np.ceil(len(self.X) / float(self.batch_size)))
+        self.X_Batches = np.zeros((self.batch_size, *self.shape, self.n_chan), dtype=np.float32)
+        self.Y_Batches = np.zeros((self.batch_size, *self.shape, 2*self.n_chan), dtype=np.float32)
 
     def on_epoch_end(self):
         self.perm = np.random.permutation(len(self.X))
-        self.X_Batches *= 0
-        self.Y_Batches *= 0
+
 
     def __getitem__(self, i):
-        idx = slice(i * self.batch_size, (i + 1) * self.batch_size)
-        idx = self.perm[idx]
+        idx = self.batch(i)
+        # idx = slice(i * self.batch_size, (i + 1) * self.batch_size)
+        # idx = self.perm[idx]
+        self.X_Batches *= 0
+        self.Y_Batches *= 0
         self.patch_sampler(self.X, self.X_Batches, indices=idx, range=self.range, shape=self.shape)
 
         for c in range(self.n_chan):
-            for j in idx:
+            for j in range(self.batch_size):
                 coords = self.get_stratified_coords(self.rand_float, box_size=self.box_size,
                                                     shape=self.shape)
 
@@ -87,7 +88,7 @@ class N2V_DataWrapper(Sequence):
                 if self.structN2Vmask is not None:
                     self.apply_structN2Vmask(self.X_Batches[j, ..., c], coords, self.dims, self.structN2Vmask)
 
-        return self.X_Batches[idx], self.Y_Batches[idx]
+        return self.X_Batches, self.Y_Batches
 
     def apply_structN2Vmask(self, patch, coords, dims, mask):
         """
@@ -112,18 +113,18 @@ class N2V_DataWrapper(Sequence):
     # return x_val_structN2V, indexing_structN2V
     @staticmethod
     def __subpatch_sampling2D__(X, X_Batches, indices, range, shape):
-        for j in indices:
+        for i, j in enumerate(indices):
             y_start = np.random.randint(0, range[0] + 1)
             x_start = np.random.randint(0, range[1] + 1)
-            X_Batches[j] = np.copy(X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]])
+            X_Batches[i] = np.copy(X[j, y_start:y_start + shape[0], x_start:x_start + shape[1]])
 
     @staticmethod
     def __subpatch_sampling3D__(X, X_Batches, indices, range, shape):
-        for j in indices:
+        for i, j in enumerate(indices):
             z_start = np.random.randint(0, range[0] + 1)
             y_start = np.random.randint(0, range[1] + 1)
             x_start = np.random.randint(0, range[2] + 1)
-            X_Batches[j] = np.copy(X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]])
+            X_Batches[i] = np.copy(X[j, z_start:z_start + shape[0], y_start:y_start + shape[1], x_start:x_start + shape[2]])
 
     @staticmethod
     def __get_stratified_coords2D__(coord_gen, box_size, shape):
