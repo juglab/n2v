@@ -22,7 +22,8 @@ from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mse, loss_mae
 from ..utils import n2v_utils
-from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
+from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP, \
+    tta_forward, tta_backward
 from ..nets.unet import build_single_unet_per_channel
 
 from tifffile import imsave
@@ -77,7 +78,7 @@ class N2V(CARE):
 
         config is None or isinstance(config, self._config_class) or _raise(
             ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (
-            type(config).__name__, self._config_class.__name__))
+                type(config).__name__, self._config_class.__name__))
         )
         if config is not None and not config.is_valid():
             invalid_attr = config.is_valid(True)[1]
@@ -103,6 +104,7 @@ class N2V(CARE):
         self.keras_model = self._build()
         if config is None:
             self._find_and_load_weights()
+
 
     def _build(self):
         return self._build_unet(
@@ -301,7 +303,6 @@ class N2V(CARE):
                 self.callbacks.append(
                     TensorBoard(log_dir=str(self.logdir / 'logs'), write_graph=False, profile_batch=0))
 
-
         if self.config.train_reduce_lr is not None:
             from keras.callbacks import ReduceLROnPlateau
             rlrop_params = self.config.train_reduce_lr
@@ -336,7 +337,7 @@ class N2V(CARE):
     def __denormalize__(self, data, means, stds):
         return (data * stds) + means
 
-    def predict(self, img, axes, resizer=PadAndCropResizer(), n_tiles=None):
+    def predict(self, img, axes, resizer=PadAndCropResizer(), n_tiles=None, tta=False):
         """
         Apply the network to sofar unseen data. This method expects the raw data, i.e. not normalized.
         During prediction the mean and standard deviation, stored with the model (during data generation), are used
@@ -351,6 +352,8 @@ class N2V(CARE):
         resizer : class(Resizer), optional(default=PadAndCropResizer())
         n_tiles : tuple(int)
                   Number of tiles to tile the image into, if it is too large for memory.
+        tta     : bool
+                  Use test-time augmentation during prediction.
 
         Returns
         -------
@@ -375,9 +378,17 @@ class N2V(CARE):
             normalized = self.__normalize__(img[..., np.newaxis], means, stds)
             normalized = normalized[..., 0]
 
-        pred = \
-        self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer, n_tiles=new_n_tiles)[
-            0]
+        if tta:
+            aug = tta_forward(normalized)
+            preds = []
+            for img in aug:
+                preds.append(self._predict_mean_and_scale(img, axes=new_axes, normalizer=None, resizer=resizer,
+                                             n_tiles=new_n_tiles)[0])
+            pred = tta_backward(preds)
+        else:
+            pred = \
+                self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer,
+                                             n_tiles=new_n_tiles)[0]
 
         pred = self.__denormalize__(pred, means, stds)
 
@@ -573,5 +584,3 @@ class N2V(CARE):
     @property
     def _config_class(self):
         return N2VConfig
-
-
