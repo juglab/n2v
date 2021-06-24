@@ -47,7 +47,7 @@ class TestExportModel():
         config = N2VConfig(X, unet_kern_size=3,
             unet_n_first=8, unet_n_depth=2, train_steps_per_epoch=2, train_epochs=2, train_loss='mse',
             batch_norm=True, train_batch_size=12, n2v_perc_pix=5, n2v_patch_shape=(64, 64),
-            n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5)        
+            n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5, train_tensorboard=False)
         # Also set a patch_shape value
         config.patch_shape=config.n2v_patch_shape
         model_name = 'n2v_2D_RGB'
@@ -80,7 +80,7 @@ class TestExportModel():
         config = N2VConfig(X, unet_kern_size=3,
                    train_steps_per_epoch=2,train_epochs=2, train_loss='mse', batch_norm=True,
                    train_batch_size=12, n2v_perc_pix=1.6, n2v_patch_shape=(64, 64),
-                   n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5)
+                   n2v_manipulator='uniform_withCP', n2v_neighborhood_radius=5, train_tensorboard=False)
 
         model_name = 'n2v_2D_SEM'
         basedir = 'models'

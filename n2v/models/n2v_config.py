@@ -1,14 +1,12 @@
 import argparse
 
-import keras.backend as K
+import tensorflow.keras.backend as K
 
-from csbdeep.models import BaseConfig
 from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, backend_channels_last
 
 from six import string_types
 
 import numpy as np
-from logging.config import BaseConfigurator
 
 # This class is a adapted version of csbdeep.models.config.py.
 class N2VConfig(argparse.Namespace):

@@ -2,15 +2,16 @@ from csbdeep.models import CARE
 from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
 from csbdeep.internals import nets, predict
 from csbdeep.models.base_model import suppress_without_basedir
+from csbdeep.utils.tf import export_SavedModel, CARETensorBoardImage
 from csbdeep.version import __version__ as package_version
 
 from six import string_types
 from csbdeep.utils.six import Path, FileNotFoundError
 from csbdeep.data import PadAndCropResizer
 
-from keras.callbacks import TerminateOnNaN
+from tensorflow.keras.callbacks import TerminateOnNaN
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.keras import backend as K
 from ruamel.yaml import YAML
 import json
 import os
@@ -19,17 +20,18 @@ import warnings
 from zipfile import ZipFile
 from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
-from ..internals.n2v_losses import loss_mse, loss_mae 
+from ..internals.n2v_losses import loss_mse, loss_mae
 from ..utils import n2v_utils
-from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP
+from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP, \
+    tta_forward, tta_backward
 from ..nets.unet import build_single_unet_per_channel
 
 from tifffile import imsave
-import keras
 from csbdeep.utils.six import tempfile
 import shutil
 
 import numpy as np
+
 
 class N2V(CARE):
     """The Noise2Void training scheme to train a standard CARE network for image restoration and enhancement.
@@ -74,16 +76,20 @@ class N2V(CARE):
     def __init__(self, config, name=None, basedir='.'):
         """See class docstring."""
 
-        config is None or isinstance(config,self._config_class) or _raise (
-                ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (type(config).__name__, self._config_class.__name__))
-            )
+        config is None or isinstance(config, self._config_class) or _raise(
+            ValueError("Invalid configuration of type '%s', was expecting type '%s'." % (
+                type(config).__name__, self._config_class.__name__))
+        )
         if config is not None and not config.is_valid():
             invalid_attr = config.is_valid(True)[1]
             raise ValueError('Invalid configuration attributes: ' + ', '.join(invalid_attr))
-        (not (config is None and basedir is None)) or _raise(ValueError("No config provided and cannot be loaded from disk since basedir=None."))
+        (not (config is None and basedir is None)) or _raise(
+            ValueError("No config provided and cannot be loaded from disk since basedir=None."))
 
-        name is None or (isinstance(name,string_types) and len(name)>0) or _raise(ValueError("No valid name: '%s'" % str(name)))
-        basedir is None or isinstance(basedir,(string_types,Path)) or _raise(ValueError("No valid basedir: '%s'" % str(basedir)))
+        name is None or (isinstance(name, string_types) and len(name) > 0) or _raise(
+            ValueError("No valid name: '%s'" % str(name)))
+        basedir is None or isinstance(basedir, (string_types, Path)) or _raise(
+            ValueError("No valid basedir: '%s'" % str(basedir)))
         self.config = config
         self.name = name if name is not None else datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S.%f")
         self.basedir = Path(basedir) if basedir is not None else None
@@ -98,22 +104,22 @@ class N2V(CARE):
         self.keras_model = self._build()
         if config is None:
             self._find_and_load_weights()
-        
+
 
     def _build(self):
         return self._build_unet(
-            n_dim                   = self.config.n_dim,
-            n_channel_out           = self.config.n_channel_out,
-            residual                = self.config.unet_residual,
-            n_depth                 = self.config.unet_n_depth,
-            kern_size               = self.config.unet_kern_size,
-            n_first                 = self.config.unet_n_first,
-            last_activation         = self.config.unet_last_activation,
-            batch_norm              = self.config.batch_norm
+            n_dim=self.config.n_dim,
+            n_channel_out=self.config.n_channel_out,
+            residual=self.config.unet_residual,
+            n_depth=self.config.unet_n_depth,
+            kern_size=self.config.unet_kern_size,
+            n_first=self.config.unet_n_first,
+            last_activation=self.config.unet_last_activation,
+            batch_norm=self.config.batch_norm
         )(self.config.unet_input_shape, self.config.single_net_per_channel)
 
-
-    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, n_channel_out=1, residual=True, last_activation='linear', batch_norm=True, single_net_per_channel=False):
+    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, n_channel_out=1, residual=True,
+                    last_activation='linear', batch_norm=True, single_net_per_channel=False):
         """Construct a common CARE neural net based on U-Net [1]_ and residual learning [2]_ to be used for image restoration/enhancement.
            Parameters
            ----------
@@ -149,16 +155,16 @@ class N2V(CARE):
 
         def _build_this(input_shape, single_net_per_channel):
             if single_net_per_channel:
-                return build_single_unet_per_channel(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
-                                              pool_size=(2,) * n_dim, residual=residual, prob_out=False,
-                                              batch_norm=batch_norm)
+                return build_single_unet_per_channel(input_shape, last_activation, n_depth, n_first,
+                                                     (kern_size,) * n_dim,
+                                                     pool_size=(2,) * n_dim, residual=residual, prob_out=False,
+                                                     batch_norm=batch_norm)
             else:
                 return nets.custom_unet(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
-                               pool_size=(2,) * n_dim, n_channel_out=n_channel_out, residual=residual,
-                               prob_out=False, batch_norm=batch_norm)
+                                        pool_size=(2,) * n_dim, n_channel_out=n_channel_out, residual=residual,
+                                        prob_out=False, batch_norm=batch_norm)
 
         return _build_this
-
 
     def train(self, X, validation_X, epochs=None, steps_per_epoch=None):
         """Train the neural network with the given data.
@@ -185,10 +191,10 @@ class N2V(CARE):
         frac_val = (1.0 * n_val) / (n_train + n_val)
         frac_warn = 0.05
         if frac_val < frac_warn:
-            warnings.warn("small number of validation images (only %.1f%% of all images)" % (100*frac_val))
-        axes = axes_check_and_normalize('S'+self.config.axes,X.ndim)
+            warnings.warn("small number of validation images (only %.1f%% of all images)" % (100 * frac_val))
+        axes = axes_check_and_normalize('S' + self.config.axes, X.ndim)
         ax = axes_dict(axes)
-        div_by = 2**self.config.unet_n_depth
+        div_by = 2 ** self.config.unet_n_depth
         axes_relevant = ''.join(a for a in 'XYZT' if a in axes)
         val_num_pix = 1
         train_num_pix = 1
@@ -201,7 +207,7 @@ class N2V(CARE):
             if n % div_by != 0:
                 raise ValueError(
                     "training images must be evenly divisible by %d along axes %s"
-                    " (axis %s has incompatible size %d)" % (div_by,axes_relevant,a,n)
+                    " (axis %s has incompatible size %d)" % (div_by, axes_relevant, a, n)
                 )
 
         if epochs is None:
@@ -224,20 +230,27 @@ class N2V(CARE):
         # a masking channel. The N2V_DataWrapper will take care of the pixel masking and manipulating.
         _mask = np.array(self.config.structN2Vmask) if self.config.structN2Vmask else None
         training_data = N2V_DataWrapper(X, np.concatenate((X, np.zeros(X.shape, dtype=X.dtype)), axis=axes.index('C')),
-                                                    self.config.train_batch_size, self.config.n2v_perc_pix,
-                                                    self.config.n2v_patch_shape, manipulator, structN2Vmask=_mask)
+                                        batch_size=self.config.train_batch_size,
+                                        length=self.config.train_steps_per_epoch * self.config.train_epochs,
+                                        perc_pix=self.config.n2v_perc_pix,
+                                        shape=self.config.n2v_patch_shape,
+                                        value_manipulation=manipulator, structN2Vmask=_mask)
 
         # validation_Y is also validation_X plus a concatenated masking channel.
         # To speed things up, we precompute the masking for the validation data.
-        validation_Y = np.concatenate((validation_X, np.zeros(validation_X.shape, dtype=validation_X.dtype)), axis=axes.index('C'))
+        validation_Y = np.concatenate((validation_X, np.zeros(validation_X.shape, dtype=validation_X.dtype)),
+                                      axis=axes.index('C'))
         n2v_utils.manipulate_val_data(validation_X, validation_Y,
-                                                        perc_pix=self.config.n2v_perc_pix,
-                                                        shape=val_patch_shape,
-                                                        value_manipulation=manipulator)
+                                      perc_pix=self.config.n2v_perc_pix,
+                                      shape=val_patch_shape,
+                                      value_manipulation=manipulator)
+        self.callbacks.append(CARETensorBoardImage(model=self.keras_model, data=(validation_X, validation_X),
+                                                   log_dir=str(self.logdir / 'logs' / 'images'),
+                                                   n_images=3, prob_out=False))
 
-        history = self.keras_model.fit_generator(generator=training_data, validation_data=(validation_X, validation_Y),
-                                                 epochs=epochs, steps_per_epoch=steps_per_epoch,
-                                                 callbacks=self.callbacks, verbose=1)
+        history = self.keras_model.fit(iter(training_data), validation_data=(validation_X, validation_Y),
+                                       epochs=epochs, steps_per_epoch=steps_per_epoch,
+                                       callbacks=self.callbacks, verbose=1)
 
         if self.basedir is not None:
             self.keras_model.save_weights(str(self.logdir / 'weights_last.h5'))
@@ -252,7 +265,6 @@ class N2V(CARE):
                     pass
 
         return history
-
 
     def prepare_for_training(self, optimizer=None, **kwargs):
         """Prepare for neural network training.
@@ -273,55 +285,23 @@ class N2V(CARE):
 
         """
         if optimizer is None:
-            from keras.optimizers import Adam
+            from tensorflow.keras.optimizers import Adam
             optimizer = Adam(lr=self.config.train_learning_rate)
         self.callbacks = self.prepare_model(self.keras_model, optimizer, self.config.train_loss, **kwargs)
 
         if self.basedir is not None:
             if self.config.train_checkpoint is not None:
-                from keras.callbacks import ModelCheckpoint
-                self.callbacks.append(ModelCheckpoint(str(self.logdir / self.config.train_checkpoint), save_best_only=True,  save_weights_only=True))
-                self.callbacks.append(ModelCheckpoint(str(self.logdir / 'weights_now.h5'),             save_best_only=False, save_weights_only=True))
+                from tensorflow.keras.callbacks import ModelCheckpoint
+                self.callbacks.append(
+                    ModelCheckpoint(str(self.logdir / self.config.train_checkpoint), save_best_only=True,
+                                    save_weights_only=True))
+                self.callbacks.append(
+                    ModelCheckpoint(str(self.logdir / 'weights_now.h5'), save_best_only=False, save_weights_only=True))
 
             if self.config.train_tensorboard:
-                from csbdeep.utils.tf import CARETensorBoard
-
-                class N2VTensorBoard(CARETensorBoard):
-                    def on_epoch_end(self, epoch, logs=None):
-                        logs = logs or {}
-
-                        if self.validation_data and self.freq:
-                            if epoch % self.freq == 0:
-                                # TODO: implement batched calls to sess.run
-                                # (current call will likely go OOM on GPU)
-                                tensors = self.model.inputs + self.gt_outputs + self.model.sample_weights
-                                if self.model.uses_learning_phase:
-                                    tensors += [K.learning_phase()]
-                                    val_data = list(v[:self.n_images] for v in self.validation_data[:-1])
-                                    val_data += self.validation_data[-1:]
-                                else:
-                                    val_data = list(v[:self.n_images] for v in self.validation_data)
-                                # GIT issue 20: We need to remove the masking component from the validation data to prevent crash.
-                                end_index = (val_data[1].shape)[-1]//2
-                                val_data[1] = val_data[1][...,:end_index]
-                                feed_dict = dict(zip(tensors, val_data))
-                                result = self.sess.run([self.merged], feed_dict=feed_dict)
-                                summary_str = result[0]
-
-                                self.writer.add_summary(summary_str, epoch)
-
-                        for name, value in logs.items():
-                            if name in ['batch', 'size']:
-                                continue
-                            summary = tf.Summary()
-                            summary_value = summary.value.add()
-                            summary_value.simple_value = value.item()
-                            summary_value.tag = name
-                            self.writer.add_summary(summary, epoch)
-
-                        self.writer.flush()
-
-                self.callbacks.append(N2VTensorBoard(log_dir=str(self.logdir), prefix_with_timestamp=False, n_images=3, write_images=True, prob_out=False))
+                from tensorflow.keras.callbacks import TensorBoard
+                self.callbacks.append(
+                    TensorBoard(log_dir=str(self.logdir / 'logs'), write_graph=False, profile_batch=0))
 
         if self.config.train_reduce_lr is not None:
             from keras.callbacks import ReduceLROnPlateau
@@ -332,13 +312,11 @@ class N2V(CARE):
 
         self._model_prepared = True
 
-
     def prepare_model(self, model, optimizer, loss, metrics=('mse', 'mae')):
         """ TODO """
 
-        from keras.optimizers import Optimizer
+        from tensorflow.keras.optimizers import Optimizer
         isinstance(optimizer, Optimizer) or _raise(ValueError())
-
 
         if loss == 'mse':
             loss_standard = eval('loss_mse()')
@@ -353,16 +331,13 @@ class N2V(CARE):
 
         return callbacks
 
-
     def __normalize__(self, data, means, stds):
         return (data - means) / stds
-
 
     def __denormalize__(self, data, means, stds):
         return (data * stds) + means
 
-
-    def predict(self, img, axes, resizer=PadAndCropResizer(), n_tiles=None):
+    def predict(self, img, axes, resizer=PadAndCropResizer(), n_tiles=None, tta=False):
         """
         Apply the network to sofar unseen data. This method expects the raw data, i.e. not normalized.
         During prediction the mean and standard deviation, stored with the model (during data generation), are used
@@ -377,6 +352,8 @@ class N2V(CARE):
         resizer : class(Resizer), optional(default=PadAndCropResizer())
         n_tiles : tuple(int)
                   Number of tiles to tile the image into, if it is too large for memory.
+        tta     : bool
+                  Use test-time augmentation during prediction.
 
         Returns
         -------
@@ -395,13 +372,23 @@ class N2V(CARE):
         if 'C' in axes:
             new_axes = axes.replace('C', '') + 'C'
             if n_tiles:
-                new_n_tiles = tuple([n_tiles[axes.index(c)] for c in axes if c != 'C' ]) + (n_tiles[axes.index('C')],)
+                new_n_tiles = tuple([n_tiles[axes.index(c)] for c in axes if c != 'C']) + (n_tiles[axes.index('C')],)
             normalized = self.__normalize__(np.moveaxis(img, axes.index('C'), -1), means, stds)
         else:
             normalized = self.__normalize__(img[..., np.newaxis], means, stds)
             normalized = normalized[..., 0]
 
-        pred = self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer, n_tiles=new_n_tiles)[0]
+        if tta:
+            aug = tta_forward(normalized)
+            preds = []
+            for img in aug:
+                preds.append(self._predict_mean_and_scale(img, axes=new_axes, normalizer=None, resizer=resizer,
+                                             n_tiles=new_n_tiles)[0])
+            pred = tta_backward(preds)
+        else:
+            pred = \
+                self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=resizer,
+                                             n_tiles=new_n_tiles)[0]
 
         pred = self.__denormalize__(pred, means, stds)
 
@@ -409,11 +396,11 @@ class N2V(CARE):
             pred = np.moveaxis(pred, -1, axes.index('C'))
 
         return pred
-    
+
     def _set_logdir(self):
         self.logdir = self.basedir / self.name
 
-        config_file =  self.logdir / 'config.json'
+        config_file = self.logdir / 'config.json'
         if self.config is None:
             if config_file.exists():
                 config_dict = load_json(str(config_file))
@@ -425,10 +412,11 @@ class N2V(CARE):
                 raise FileNotFoundError("config file doesn't exist: %s" % str(config_file.resolve()))
         else:
             if self.logdir.exists():
-                warnings.warn('output path for model already exists, files may be overwritten: %s' % str(self.logdir.resolve()))
+                warnings.warn(
+                    'output path for model already exists, files may be overwritten: %s' % str(self.logdir.resolve()))
             self.logdir.mkdir(parents=True, exist_ok=True)
             save_json(vars(self.config), str(config_file))
-    
+
     @suppress_without_basedir(warn=True)
     def export_TF(self, name, description, authors, test_img, axes, patch_shape, fname=None):
         """
@@ -444,96 +432,96 @@ class N2V(CARE):
             fname = self.logdir / 'export.bioimage.io.zip'
         else:
             fname = Path(fname)
-            
+
         input_n_dims = len(test_img.shape)
         if 'C' in axes:
-            input_n_dims -=1 
+            input_n_dims -= 1
         assert input_n_dims == self.config.n_dim, 'Input and network dimensions do not match.'
-        assert test_img.shape[axes.index('X')] == test_img.shape[axes.index('Y')], 'X and Y dimensions are not of same length.'    
-        test_output = self.predict(test_img, axes) 
+        assert test_img.shape[axes.index('X')] == test_img.shape[
+            axes.index('Y')], 'X and Y dimensions are not of same length.'
+        test_output = self.predict(test_img, axes)
         # Extract central slice of Z-Stack
         if 'Z' in axes:
             z_dim = axes.index('Z')
             if z_dim != 0:
                 test_output = np.moveaxis(test_output, z_dim, 0)
-            test_output = test_output[int(test_output.shape[0]/2)]
-        
+            test_output = test_output[int(test_output.shape[0] / 2)]
+
         # CSBDeep Export
         meta = {
-            'type':          self.__class__.__name__,
-            'version':       package_version,
+            'type': self.__class__.__name__,
+            'version': package_version,
             'probabilistic': self.config.probabilistic,
-            'axes':          self.config.axes,
-            'axes_div_by':   self._axes_div_by(self.config.axes),
-            'tile_overlap':  self._axes_tile_overlap(self.config.axes),
+            'axes': self.config.axes,
+            'axes_div_by': self._axes_div_by(self.config.axes),
+            'tile_overlap': self._axes_tile_overlap(self.config.axes),
         }
         export_SavedModel(self.keras_model, str(fname), meta=meta)
         # CSBDeep Export Done
-        
+
         # Replace : with -
         name = name.replace(':', ' -')
         yml_dict = self.get_yml_dict(name, description, authors, test_img, axes, patch_shape=patch_shape)
         yml_file = self.logdir / 'model.yaml'
-        
+
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
-        yaml = YAML(typ='rt') 
+        yaml = YAML(typ='rt')
         yaml.default_flow_style = False
         with open(yml_file, 'w') as outfile:
             yaml.dump(yml_dict, outfile)
-            
+
         input_file = self.logdir / 'testinput.tif'
         output_file = self.logdir / 'testoutput.tif'
         imsave(input_file, test_img)
         imsave(output_file, test_output)
-            
+
         with ZipFile(fname, 'a') as myzip:
             myzip.write(yml_file, arcname=os.path.basename(yml_file))
             myzip.write(input_file, arcname=os.path.basename(input_file))
             myzip.write(output_file, arcname=os.path.basename(output_file))
-            
+
         print("\nModel exported in BioImage ModelZoo format:\n%s" % str(fname.resolve()))
-            
-    
+
     def get_yml_dict(self, name, description, authors, test_img, axes, patch_shape=None):
         if (patch_shape != None):
             self.config.patch_shape = patch_shape
-            
+
         ''' Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used more than
-        once in the dictionary''' 
-        mean_val = [] 
-        mean_val1 = [] 
+        once in the dictionary'''
+        mean_val = []
+        mean_val1 = []
         for ele in self.config.means:
             mean_val.append(float(ele))
             mean_val1.append(float(ele))
-        std_val = [] 
-        std_val1 = [] 
+        std_val = []
+        std_val1 = []
         for ele in self.config.stds:
             std_val.append(float(ele))
             std_val1.append(float(ele))
         in_data_range_val = ['-inf', 'inf']
         out_data_range_val = ['-inf', 'inf']
-            
+
         axes_val = 'b' + self.config.axes
         axes_val = axes_val.lower()
-        val = 2**self.config.unet_n_depth
+        val = 2 ** self.config.unet_n_depth
         val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
-        min_val = [1, val, val, self.config.n_channel_in ]
+        min_val = [1, val, val, self.config.n_channel_in]
         step_val = [1, val, val, 0]
         halo_val = [0, val1, val1, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
-        
+
         yaml = YAML(typ='rt')
-        with open(self.logdir/'config.json','r') as f:
+        with open(self.logdir / 'config.json', 'r') as f:
             tr_kwargs_val = yaml.load(f)
-        
+
         if (self.config.n_dim == 3):
-            min_val = [1, val, val, val, self.config.n_channel_in ]
+            min_val = [1, val, val, val, self.config.n_channel_in]
             step_val = [1, val, val, val, 0]
             halo_val = [0, val1, val1, val1, 0]
             scale_val = [1, 1, 1, 1, 1]
             offset_val = [0, 0, 0, 0, 0]
- 
+
         yml_dict = {
             'name': name,
             'description': description,
@@ -559,8 +547,8 @@ class N2V(CARE):
                     'step': step_val
                 }
             }],
-            'outputs': [{ 
-                'name': self.keras_model.layers[-1].output.name , 
+            'outputs': [{
+                'name': self.keras_model.layers[-1].output.name,
                 'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': out_data_range_val,
@@ -577,79 +565,22 @@ class N2V(CARE):
             'prediction': {
                 'weights': {'source': './variables/variables'},
                 'preprocess': [{
-                    'kwargs': { 
+                    'kwargs': {
                         'mean': mean_val,
                         'stdDev': std_val
                     }
                 }],
                 'postprocess': [{
-                    'kwargs': { 
+                    'kwargs': {
                         'mean': mean_val1,
                         'stdDev': std_val1
                     }
                 }]
             }
         }
-        
+
         return yml_dict
-        
+
     @property
     def _config_class(self):
         return N2VConfig
-
-    
-def export_SavedModel(model, outpath, meta={}, format='zip'):
-    """Export Keras model in TensorFlow's SavedModel_ format.
-    See `Your Model in Fiji`_ to learn how to use the exported model with our CSBDeep Fiji plugins.
-    .. _SavedModel: https://www.tensorflow.org/programmers_guide/saved_model#structure_of_a_savedmodel_directory
-    .. _`Your Model in Fiji`: https://github.com/CSBDeep/CSBDeep_website/wiki/Your-Model-in-Fiji
-    Parameters
-    ----------
-    model : :class:`keras.models.Model`
-        Keras model to be exported.
-    outpath : str
-        Path of the file/folder that the model will exported to.
-    meta : dict, optional
-        Metadata to be saved in an additional ``meta.json`` file.
-    format : str, optional
-        Can be 'dir' to export as a directory or 'zip' (default) to export as a ZIP file.
-    Raises
-    ------
-    ValueError
-        Illegal arguments.
-    """
-
-    def export_to_dir(dirname):
-        if len(model.inputs) > 1 or len(model.outputs) > 1:
-            warnings.warn('Found multiple input or output layers.')
-        builder = tf.saved_model.builder.SavedModelBuilder(dirname)
-        # use name 'input'/'output' if there's just a single input/output layer
-        inputs  = dict(zip(model.input_names,model.inputs))   if len(model.inputs)  > 1 else dict(input=model.input)
-        outputs = dict(zip(model.output_names,model.outputs)) if len(model.outputs) > 1 else dict(output=model.output)
-        signature = tf.saved_model.signature_def_utils.predict_signature_def(inputs=inputs, outputs=outputs)
-        signature_def_map = { tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature }
-        builder.add_meta_graph_and_variables(K.get_session(),
-                                             [tf.saved_model.tag_constants.SERVING],
-                                             signature_def_map=signature_def_map)
-        builder.save()
-        if meta is not None and len(meta) > 0:
-            save_json(meta, os.path.join(dirname,'meta.json'))
-
-
-    ## checks
-    isinstance(model,keras.models.Model) or _raise(ValueError("'model' must be a Keras model."))
-    # supported_formats = tuple(['dir']+[name for name,description in shutil.get_archive_formats()])
-    supported_formats = 'dir','zip'
-    format in supported_formats or _raise(ValueError("Unsupported format '%s', must be one of %s." % (format,str(supported_formats))))
-
-    # remove '.zip' file name extension if necessary
-    if format == 'zip' and outpath.endswith('.zip'):
-        outpath = os.path.splitext(outpath)[0]
-
-    if format == 'dir':
-        export_to_dir(outpath)
-    else:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpsubdir = os.path.join(tmpdir,'model')
-            export_to_dir(tmpsubdir)
-            shutil.make_archive(outpath, format, tmpsubdir, './')

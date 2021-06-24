@@ -1,8 +1,8 @@
 from __future__ import print_function, unicode_literals, absolute_import, division
 
-from keras.layers import Input, Conv2D, Conv3D, Activation, Lambda
-from keras.models import Model
-from keras.layers.merge import Add, Concatenate
+from tensorflow.keras.layers import Input, Conv2D, Conv3D, Activation, Lambda
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Add, Concatenate
 from csbdeep.internals.blocks import unet_block
 
 import tensorflow as tf
