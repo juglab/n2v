@@ -304,7 +304,7 @@ class N2V(CARE):
                     TensorBoard(log_dir=str(self.logdir / 'logs'), write_graph=False, profile_batch=0))
 
         if self.config.train_reduce_lr is not None:
-            from keras.callbacks import ReduceLROnPlateau
+            from tensorflow.keras.callbacks import ReduceLROnPlateau
             rlrop_params = self.config.train_reduce_lr
             if 'verbose' not in rlrop_params:
                 rlrop_params['verbose'] = True
