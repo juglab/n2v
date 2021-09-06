@@ -19,6 +19,7 @@ matrix:
 
 install:
   - pip install $TENSORFLOW $KERAS
+  - pip install packaging==21.0
   - pip install .
 
 script:
