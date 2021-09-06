@@ -15,6 +15,7 @@ matrix:
 
 install:
   - pip install tensorflow
+  - pip install packaging==21.0
   - pip install .
 
 script:
