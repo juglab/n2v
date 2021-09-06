@@ -7,14 +7,18 @@
 
 language: python
 
+env:
+  - TENSORFLOW='tensorflow' KERAS='keras'
+
 matrix:
   include:
     - os: linux
       dist: bionic
       python: 3.7
+      env: TENSORFLOW='tensorflow==2.4.1' KERAS='keras==2.3.1'
 
 install:
-  - pip install tensorflow
+  - pip install $TENSORFLOW $KERAS
   - pip install packaging==21.0
   - pip install .
 
