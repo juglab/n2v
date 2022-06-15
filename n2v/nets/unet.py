@@ -3,7 +3,7 @@ from __future__ import print_function, unicode_literals, absolute_import, divisi
 from tensorflow.keras.layers import Input, Conv2D, Conv3D, Activation, Lambda
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Add, Concatenate
-from csbdeep.internals.blocks import unet_block
+from .unet_blocks import unet_block
 
 import tensorflow as tf
 
@@ -23,7 +23,9 @@ def build_single_unet_per_channel(input_shape,
                 pool_size=(2,2,2),
                 residual=False,
                 prob_out=False,
-                eps_scale=1e-3):
+                eps_scale=1e-3,
+                blurpool=False,
+                skip_skipone=False):
     """ TODO """
 
     if last_activation is None:
@@ -46,7 +48,10 @@ def build_single_unet_per_channel(input_shape,
         c = Lambda(lambda x: x[:, ..., i:i+1])(input)
         unet = unet_block(n_depth, n_filter_base, kernel_size,
                           activation=activation, dropout=dropout, batch_norm=batch_norm,
-                          n_conv_per_depth=n_conv_per_depth, pool=pool_size, prefix='channel_{}'.format(i))(c)
+                          n_conv_per_depth=n_conv_per_depth, pool=pool_size,
+                          prefix='channel_{}'.format(i),
+                          blurpool=blurpool,
+                          skip_skipone=skip_skipone)(c)
 
         final = conv(num_channel_out, (1,)*n_dim, activation='linear')(unet)
         if residual:

@@ -68,7 +68,10 @@ class N2VConfig(argparse.Namespace):
         Note: This makes the ``network n_channel_in`` times larger. Default: ``True``
     structN2Vmask : [[int]]
         Masking kernel for StructN2V to hide pixels adjacent to main blind spot. Value 1 = 'hidden', Value 0 = 'non hidden'. Nested lists equivalent to ndarray. Must have odd length in each dimension (center pixel is blind spot). Default ``None`` implies normal N2V masking.
-
+    blurpool : bool
+        Use blurpool for maxpooling.
+    skip_skipone: bool
+        Remove top-most skip-connection.
 
         .. _ReduceLROnPlateau: https://keras.io/callbacks/#reducelronplateau
     """
@@ -152,6 +155,9 @@ class N2VConfig(argparse.Namespace):
 
             self.single_net_per_channel = True
 
+            self.blurpool = False
+            self.skip_skipone = False
+
             # disallow setting 'n_dim' manually
             try:
                 del kwargs['n_dim']
@@ -233,6 +239,9 @@ class N2VConfig(argparse.Namespace):
                                                                'normal_fitted', 'identity']
         ok['n2v_neighborhood_radius']= _is_int(self.n2v_neighborhood_radius, 0) 
         ok['single_net_per_channel'] = isinstance( self.single_net_per_channel, bool )
+
+        ok['blurpool'] = isinstance(self.blurpool, bool)
+        ok['skip_skipone'] = isinstance(self.skip_skipone, bool)
 
         if self.structN2Vmask is None:
             ok['structN2Vmask'] = True
