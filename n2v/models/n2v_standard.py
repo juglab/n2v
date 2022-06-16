@@ -24,7 +24,7 @@ from ..internals.n2v_losses import loss_mse, loss_mae
 from ..utils import n2v_utils
 from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP, \
     tta_forward, tta_backward
-from ..nets.unet import build_single_unet_per_channel
+from ..nets.unet import build_single_unet_per_channel, build_unet
 
 from tifffile import imsave
 from csbdeep.utils.six import tempfile
@@ -105,21 +105,23 @@ class N2V(CARE):
         if config is None:
             self._find_and_load_weights()
 
-
     def _build(self):
         return self._build_unet(
             n_dim=self.config.n_dim,
-            n_channel_out=self.config.n_channel_out,
             residual=self.config.unet_residual,
             n_depth=self.config.unet_n_depth,
             kern_size=self.config.unet_kern_size,
             n_first=self.config.unet_n_first,
             last_activation=self.config.unet_last_activation,
-            batch_norm=self.config.batch_norm
+            batch_norm=self.config.batch_norm,
+            blurpool=self.config.blurpool,
+            skip_skipone=self.config.skip_skipone
         )(self.config.unet_input_shape, self.config.single_net_per_channel)
 
-    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, n_channel_out=1, residual=True,
-                    last_activation='linear', batch_norm=True, single_net_per_channel=False):
+    def _build_unet(self, n_dim=2, n_depth=2, kern_size=3, n_first=32, residual=True,
+                    last_activation='linear', batch_norm=True,
+                    blurpool=False,
+                    skip_skipone=False):
         """Construct a common CARE neural net based on U-Net [1]_ and residual learning [2]_ to be used for image restoration/enhancement.
            Parameters
            ----------
@@ -158,11 +160,21 @@ class N2V(CARE):
                 return build_single_unet_per_channel(input_shape, last_activation, n_depth, n_first,
                                                      (kern_size,) * n_dim,
                                                      pool_size=(2,) * n_dim, residual=residual, prob_out=False,
-                                                     batch_norm=batch_norm)
+                                                     batch_norm=batch_norm,
+                                                     blurpool=blurpool,
+                                                     skip_skipone=skip_skipone)
             else:
-                return nets.custom_unet(input_shape, last_activation, n_depth, n_first, (kern_size,) * n_dim,
-                                        pool_size=(2,) * n_dim, n_channel_out=n_channel_out, residual=residual,
-                                        prob_out=False, batch_norm=batch_norm)
+                return build_unet(input_shape,
+                                  last_activation,
+                                  n_depth,
+                                  n_first,
+                                  (kern_size,) * n_dim,
+                                  pool_size=(2,) * n_dim,
+                                  residual=residual,
+                                  prob_out=False,
+                                  batch_norm=batch_norm,
+                                  blurpool=blurpool,
+                                  skip_skipone=skip_skipone)
 
         return _build_this
 
