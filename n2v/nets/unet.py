@@ -107,7 +107,7 @@ def build_unet(input_shape,
     unet = unet_block(n_depth, n_filter_base, kernel_size,
                       activation=activation, dropout=dropout, batch_norm=batch_norm,
                       n_conv_per_depth=n_conv_per_depth, pool=pool_size,
-                      prefix='channel_{}'.format(i),
+                      prefix='channel_0',
                       blurpool=blurpool,
                       skip_skipone=skip_skipone)(input)
 
