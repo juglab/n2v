@@ -1,20 +1,36 @@
 import numpy as np
+import numpy.ma as ma
 from tqdm import tqdm
 from ..internals.N2V_DataWrapper import N2V_DataWrapper as dw
 
 
-def get_subpatch(patch, coord, local_sub_patch_radius):
-    start = np.maximum(0, np.array(coord) - local_sub_patch_radius)
-    end = start + local_sub_patch_radius * 2 + 1
+def get_subpatch(patch, coord, local_sub_patch_radius, crop_patch=True):
+    crop_neg, crop_pos = 0, 0
+    if crop_patch:
+        start = np.array(coord) - local_sub_patch_radius
+        end = start + local_sub_patch_radius * 2 + 1
 
-    shift = np.minimum(0, patch.shape - end)
+        # compute offsets left/up ...
+        crop_neg = np.minimum(start, 0)
+        # and right/down
+        crop_pos = np.maximum(0, end-patch.shape)
 
-    start += shift
-    end += shift
+        # correct for offsets, patch size shrinks if crop_*!=0
+        start -= crop_neg
+        end -= crop_pos
+    else:
+        start = np.maximum(0, np.array(coord) - local_sub_patch_radius)
+        end = start + local_sub_patch_radius * 2 + 1
+
+        shift = np.minimum(0, patch.shape - end)
+
+        start += shift
+        end += shift
 
     slices = [slice(s, e) for s, e in zip(start, end)]
 
-    return patch[tuple(slices)]
+    # return crop vectors for deriving correct center pixel locations later
+    return patch[tuple(slices)], crop_neg, crop_pos
 
 
 def random_neighbor(shape, coord):
@@ -33,8 +49,21 @@ def normal_int(mean, sigma, w):
     return int(np.clip(np.round(np.random.normal(mean, sigma)), 0, w - 1))
 
 
+def mask_center(local_sub_patch_radius, ndims=2):
+    size = local_sub_patch_radius*2 + 1
+    patch_wo_center = np.ones((size, ) * ndims)
+    if ndims == 2:
+        patch_wo_center[local_sub_patch_radius, local_sub_patch_radius] = 0
+    elif ndims == 3:
+        patch_wo_center[local_sub_patch_radius,
+        local_sub_patch_radius, local_sub_patch_radius] = 0
+    else:
+        raise NotImplementedError()
+    return ma.make_mask(patch_wo_center)
+
+
 def pm_normal_withoutCP(local_sub_patch_radius):
-    def normal_withoutCP(patch, coords, dims):
+    def normal_withoutCP(patch, coords, dims, structN2Vmask=None):
         vals = []
         for coord in zip(*coords):
             rand_coords = random_neighbor(patch.shape, coord)
@@ -44,11 +73,39 @@ def pm_normal_withoutCP(local_sub_patch_radius):
     return normal_withoutCP
 
 
-def pm_uniform_withCP(local_sub_patch_radius):
-    def random_neighbor_withCP_uniform(patch, coords, dims):
+def pm_mean(local_sub_patch_radius):
+    def patch_mean(patch, coords, dims, structN2Vmask=None):
+        patch_wo_center = mask_center(local_sub_patch_radius, ndims=dims)
         vals = []
         for coord in zip(*coords):
-            sub_patch = get_subpatch(patch, coord, local_sub_patch_radius)
+            sub_patch, crop_neg, crop_pos = get_subpatch(patch, coord, local_sub_patch_radius)
+            slices = [slice(-n, s-p) for n, p, s in zip(crop_neg, crop_pos, patch_wo_center.shape)]
+            sub_patch_mask = (structN2Vmask or patch_wo_center)[tuple(slices)]
+            vals.append(np.mean(sub_patch[sub_patch_mask]))
+        return vals
+
+    return patch_mean
+
+
+def pm_median(local_sub_patch_radius):
+    def patch_median(patch, coords, dims, structN2Vmask=None):
+        patch_wo_center = mask_center(local_sub_patch_radius, ndims=dims)
+        vals = []
+        for coord in zip(*coords):
+            sub_patch, crop_neg, crop_pos = get_subpatch(patch, coord, local_sub_patch_radius)
+            slices = [slice(-n, s-p) for n, p, s in zip(crop_neg, crop_pos, patch_wo_center.shape)]
+            sub_patch_mask = (structN2Vmask or patch_wo_center)[tuple(slices)]
+            vals.append(np.median(sub_patch[sub_patch_mask]))
+        return vals
+
+    return patch_median
+
+
+def pm_uniform_withCP(local_sub_patch_radius):
+    def random_neighbor_withCP_uniform(patch, coords, dims, structN2Vmask=None):
+        vals = []
+        for coord in zip(*coords):
+            sub_patch, _, _ = get_subpatch(patch, coord, local_sub_patch_radius)
             rand_coords = [np.random.randint(0, s) for s in sub_patch.shape[0:dims]]
             vals.append(sub_patch[tuple(rand_coords)])
         return vals
@@ -56,8 +113,22 @@ def pm_uniform_withCP(local_sub_patch_radius):
     return random_neighbor_withCP_uniform
 
 
+def pm_uniform_withoutCP(local_sub_patch_radius):
+    def random_neighbor_withoutCP_uniform(patch, coords, dims, structN2Vmask=None):
+        patch_wo_center = mask_center(local_sub_patch_radius, ndims=dims)
+        vals = []
+        for coord in zip(*coords):
+            sub_patch, crop_neg, crop_pos = get_subpatch(patch, coord, local_sub_patch_radius)
+            slices = [slice(-n, s-p) for n, p, s in zip(crop_neg, crop_pos, patch_wo_center.shape)]
+            sub_patch_mask = (structN2Vmask or patch_wo_center)[tuple(slices)]
+            vals.append(np.random.permutation(sub_patch[sub_patch_mask])[0])
+        return vals
+
+    return random_neighbor_withoutCP_uniform
+
+
 def pm_normal_additive(pixel_gauss_sigma):
-    def pixel_gauss(patch, coords, dims):
+    def pixel_gauss(patch, coords, dims, structN2Vmask=None):
         vals = []
         for coord in zip(*coords):
             vals.append(np.random.normal(patch[tuple(coord)], pixel_gauss_sigma))
@@ -67,10 +138,10 @@ def pm_normal_additive(pixel_gauss_sigma):
 
 
 def pm_normal_fitted(local_sub_patch_radius):
-    def local_gaussian(patch, coords, dims):
+    def local_gaussian(patch, coords, dims, structN2Vmask=None):
         vals = []
         for coord in zip(*coords):
-            sub_patch = get_subpatch(patch, coord, local_sub_patch_radius)
+            sub_patch, _, _ = get_subpatch(patch, coord, local_sub_patch_radius)
             axis = tuple(range(dims))
             vals.append(np.random.normal(np.mean(sub_patch, axis=axis), np.std(sub_patch, axis=axis)))
         return vals
@@ -79,7 +150,7 @@ def pm_normal_fitted(local_sub_patch_radius):
 
 
 def pm_identity(local_sub_patch_radius):
-    def identity(patch, coords, dims):
+    def identity(patch, coords, dims, structN2Vmask=None):
         vals = []
         for coord in zip(*coords):
             vals.append(patch[coord])

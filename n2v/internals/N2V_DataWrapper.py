@@ -79,12 +79,17 @@ class N2V_DataWrapper(RollingSequence):
                 indexing = (j,) + coords + (c,)
                 indexing_mask = (j,) + coords + (c + self.n_chan, )
                 y_val = self.X_Batches[indexing]
-                x_val = self.value_manipulation(self.X_Batches[j, ..., c], coords, self.dims)
+                x_val = self.value_manipulation(
+                    self.X_Batches[j, ..., c],
+                    coords,
+                    self.dims,
+                    self.structN2Vmask
+                )
 
                 self.Y_Batches[indexing] = y_val
                 self.Y_Batches[indexing_mask] = 1
                 self.X_Batches[indexing] = x_val
-                
+
                 if self.structN2Vmask is not None:
                     self.apply_structN2Vmask(self.X_Batches[j, ..., c], coords, self.dims, self.structN2Vmask)
 
