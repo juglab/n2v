@@ -14,7 +14,8 @@ class MaxBlurPool2D(Layer):
     Implementation inspired by: https://github.com/csvance/blur-pool-keras
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, pool, **kwargs):
+        self.pool = pool
         self.blur_kernel = None
 
         super(MaxBlurPool2D, self).__init__(**kwargs)
@@ -41,13 +42,14 @@ class MaxBlurPool2D(Layer):
 
         x = tf.nn.pool(
             x,
-            2,
+            (self.pool[0], self.pool[1]),
             strides=(1, 1),
             padding="SAME",
             pooling_type="MAX",
             data_format="NHWC",
         )
-        x = K.depthwise_conv2d(x, self.blur_kernel, padding="same", strides=2)
+        x = K.depthwise_conv2d(x, self.blur_kernel, padding="same",
+                               strides=(self.pool[0], self.pool[1]))
 
         return x
 
