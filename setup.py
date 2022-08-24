@@ -42,16 +42,9 @@ setup(name='n2v',
       ],
 
       install_requires=[
-          "numpy",
-          "scipy",
-          "matplotlib",
-          "six",
-          "keras>=2.1.1,<2.4.0",
-          "tifffile>=2020.5.11",
           "imagecodecs>=2020.2.18",
-          "tqdm",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep>=0.6.0,<0.7.0",
+          "csbdeep>=0.7.2",
           "Pillow",
           "ruamel.yaml>=0.16.10"
         ]
