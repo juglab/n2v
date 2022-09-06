@@ -102,6 +102,30 @@ def test_pm_uniform_withCP():
             assert 0 <= v and v < 1000
 
 
+def test_pm_uniform_withoutCP():
+    patch = np.arange(100)
+    patch.shape = (10, 10)
+
+    coords = (np.array([3, 4]), np.array([5, 3]))
+
+    sampler = n2v_utils.pm_uniform_withoutCP(2)
+
+    for i in range(100):
+        val = sampler(patch, coords, len(patch.shape))
+        for v, c in zip(val, zip(*coords)):
+            assert v != patch[c[0], c[1]]
+
+    patch = np.arange(1000)
+    patch.shape = (10, 10, 10)
+
+    coords = (np.array([3, 4, 6]), np.array([3, 3, 5]), np.array([3, 5, 3]))
+
+    for i in range(10):
+        val = sampler(patch, coords, len(patch.shape))
+        for v, c in zip(val, zip(*coords)):
+            assert v != patch[c[0], c[1], c[2]]
+
+
 def test_pm_normal_additive():
     patch = np.arange(100)
     patch.shape = (10, 10)

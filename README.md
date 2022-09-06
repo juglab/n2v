@@ -24,10 +24,9 @@ If you do not yet have a strong opinion, just use it too!
 After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and CuDNN installed on your machine (_Note:_ Macs are not supported, and if you sit on a Windows machine all this might also require some modifications.):
 
 ```
-$ conda create -n 'n2v' python=3.7
-$ source activate n2v
-$ conda install tensorflow-gpu=2.4.1 keras=2.3.1
-$ pip install jupyter
+conda create -n n2v python=3.8 cudatoolkit=11.0 cudnn=8.0 -c conda-forge
+conda activate n2v
+pip install tensorflow==2.4
 ```
 
 Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:

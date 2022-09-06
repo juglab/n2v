@@ -22,7 +22,9 @@ from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mse, loss_mae
 from ..utils import n2v_utils
-from ..utils.n2v_utils import pm_identity, pm_normal_additive, pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP, \
+from ..utils.n2v_utils import pm_identity, pm_normal_additive, \
+    pm_normal_fitted, pm_normal_withoutCP, pm_uniform_withCP, \
+    pm_uniform_withoutCP, pm_mean, pm_median, \
     tta_forward, tta_backward
 from ..nets.unet import build_single_unet_per_channel, build_unet
 
