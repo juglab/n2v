@@ -113,8 +113,9 @@ def build_unet(input_shape,
 
     final = conv(num_channels, (1,)*n_dim, activation='linear')(unet)
     if residual:
-        if not (num_channels == 1 if backend_channels_last() else num_channels
-                                                       == 1):
+        if not (num_channels == 1):
+        #if not (num_channels == 1 if backend_channels_last() else num_channels
+        #                                              == 1):
             raise ValueError("number of input and output channels must be the same for a residual net.")
         final = Add()([final, input])
     final = Activation(activation=last_activation)(final)
