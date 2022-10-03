@@ -76,6 +76,7 @@ __Note:__ You can use the N2V2 functionality by providing the following three pa
 * `blurpool=True`, by default set to `False`
 * `skip_skipone=True`, by default set to `False`
 * `n2v_manipulator="median"`, by default set to `"uniform_withCP"`
+* `unet_residual=False`, by default set to  
 
 __Warning:__ Currently, N2V2 does only support 2D data.
 
