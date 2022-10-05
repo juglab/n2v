@@ -4,12 +4,11 @@ from os import path
 
 _dir = path.abspath(path.dirname(__file__))
 
-with open(path.join(_dir,'n2v','version.py')) as f:
+with open(path.join(_dir, 'n2v', 'version.py')) as f:
     exec(f.read())
 
-with open(path.join(_dir,'README.md')) as f:
+with open(path.join(_dir, 'README.md')) as f:
     long_description = f.read()
-
 
 setup(name='n2v',
       version=__version__,
@@ -38,8 +37,8 @@ setup(name='n2v',
       ],
 
       scripts=['scripts/trainN2V.py',
-          'scripts/predictN2V.py'
-      ],
+               'scripts/predictN2V.py'
+               ],
 
       install_requires=[
           "imagecodecs>=2020.2.18",
@@ -47,5 +46,5 @@ setup(name='n2v',
           "csbdeep>=0.7.2",
           "Pillow",
           "ruamel.yaml>=0.16.10"
-        ]
+      ]
       )

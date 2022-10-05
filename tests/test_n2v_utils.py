@@ -15,11 +15,11 @@ def test_get_subpatch():
 
     subpatch_test = n2v_utils.get_subpatch(patch, (3, 3), 2)
 
-    assert np.sum(subpatch_target - subpatch_test) == 0
+    assert np.sum(subpatch_target - subpatch_test[0]) == 0
 
     subpatch_test = n2v_utils.get_subpatch(patch, (3, 3), 1)
 
-    assert np.sum(subpatch_target[1:-1, 1:-1] - subpatch_test) == 0
+    assert np.sum(subpatch_target[1:-1, 1:-1] - subpatch_test[0]) == 0
 
     patch = np.arange(1000)
     patch.shape = (10, 10, 10)
@@ -36,7 +36,7 @@ def test_get_subpatch():
 
     subpatch_test = n2v_utils.get_subpatch(patch, (1, 4, 2), 1)
 
-    assert np.sum(subpatch_target - subpatch_test) == 0
+    assert np.sum(subpatch_target - subpatch_test[0]) == 0
 
 
 def test_random_neighbor():
@@ -65,7 +65,7 @@ def test_pm_normal_neighbor_withoutCP():
     for i in range(100):
         val = sampler(patch, coords, len(patch.shape))
         for v in val:
-            assert 0 <= v and v < 100
+            assert 0 <= v < 100
 
     patch = np.arange(1000)
     patch.shape = (10, 10, 10, 1)
@@ -75,7 +75,7 @@ def test_pm_normal_neighbor_withoutCP():
     for i in range(100):
         val = sampler(patch, coords, len(patch.shape))
         for v in val:
-            assert 0 <= v and v < 1000
+            assert 0 <= v < 1000
 
 
 def test_pm_uniform_withCP():
@@ -89,7 +89,7 @@ def test_pm_uniform_withCP():
     for i in range(100):
         val = sampler(patch, coords, len(patch.shape))
         for v in val:
-            assert 0 <= v and v < 100
+            assert 0 <= v < 100
 
     patch = np.arange(1000)
     patch.shape = (10, 10, 10)
@@ -99,7 +99,7 @@ def test_pm_uniform_withCP():
     for i in range(10):
         val = sampler(patch, coords, len(patch.shape))
         for v in val:
-            assert 0 <= v and v < 1000
+            assert 0 <= v < 1000
 
 
 def test_pm_uniform_withoutCP():
