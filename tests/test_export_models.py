@@ -115,7 +115,10 @@ def test_model_build_and_export_2D_SEM(temp_dir):
 
 
 def test_export_yaml(tmp_path):
-    with open('test_data/config.json', 'r') as f:
+    current = Path(__file__)
+    config_path = Path(current.parent, 'test_data/config.json')
+
+    with open(config_path, 'r') as f:
         config = json.load(f)
 
     mean_val = []
@@ -140,7 +143,7 @@ def test_export_yaml(tmp_path):
     offset_val = [0, 0, 0, 0]
 
     yaml = YAML(typ='rt')
-    with open('test_data/config.json', 'r') as f:
+    with open(config_path, 'r') as f:
         tr_kwargs_val = yaml.load(f)
 
     yml_dict = {

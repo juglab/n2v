@@ -1,3 +1,4 @@
+from pathlib import Path
 import tifffile
 
 """
@@ -7,7 +8,9 @@ import tifffile
 
 
 def test_tifffile():
-    image_lzw = 'test_data/flybrain_lzw.tiff'
+    current = Path(__file__)
+    image_lzw = Path(current.parent, 'test_data/flybrain_lzw.tiff')
+
     image = tifffile.imread(image_lzw)
 
     assert image.shape == (256, 256, 3)

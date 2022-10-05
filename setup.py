@@ -48,5 +48,9 @@ setup(name='n2v',
           "csbdeep>=0.7.2",
           "Pillow",
           "ruamel.yaml>=0.16.10"
-      ]
+      ],
+
+      extras_require={
+          "testing": ["pytest"]
+      }
       )
