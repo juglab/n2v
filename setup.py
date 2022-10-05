@@ -41,6 +41,7 @@ setup(name='n2v',
                ],
 
       install_requires=[
+          "numpy",
           "imagecodecs>=2020.2.18",
           "backports.tempfile;python_version<'3.4'",
           "csbdeep>=0.7.2",
