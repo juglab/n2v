@@ -47,7 +47,7 @@ setup(name='n2v',
           "tifffile",
           "imagecodecs>=2020.2.18",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep>=0.7.2",
+          "csbdeep>=0.7.2,<0.8.0",
           "Pillow",
           "ruamel.yaml>=0.16.10"
       ],
