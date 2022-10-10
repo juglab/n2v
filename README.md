@@ -13,21 +13,39 @@ Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) (
 
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
-We have tested Noise2Void using Python 3.7 and tensorflow-gpu 2.4.1.
+We have tested Noise2Void using Python 3.9 and TensorFlow 2.7 and 2.10.
 
-Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.0 supports TensorFlow 2 only.
+Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.* supports TensorFlow 2 only.
 
 #### If you start from scratch...
 We recommend using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 If you do not yet have a strong opinion, just use it too!
 
-After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and CuDNN installed on your machine (_Note:_ Macs are not supported, and if you sit on a Windows machine all this might also require some modifications.):
+After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and 
+CuDNN installed on your machine.
+_Note:_ Macs are not GPU-supported with TensorFlow.
+
+The [Tensorflow guidelines](https://www.tensorflow.org/install/pip) provide a step by step guide on how to install
+TensorFlow on the various operating system. 
+
+**For linux:**
+```
+conda install -n n2v -c conda-forge cudatoolkit=11.2 cudnn=8.1.0
+conda activate n2v
+
+# export path to be able to use GPU
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
+
+# install tensorflow
+python3 -m pip install tensorflow
+
+# Verify install:
+python3 -c "import tensorflow as tf; print(tf.config.list_physical_devices('GPU'))"
 
 ```
-conda create -n n2v python=3.8 cudatoolkit=11.0 cudnn=8.0 -c conda-forge
-conda activate n2v
-pip install tensorflow==2.4
-```
+
+**For windows**: you probably want to use a linux-like bash (such as [Git for Windows](https://gitforwindows.org/)).
+The instructions should then be similar to those above. TensorFlow provides a [step by step](https://www.tensorflow.org/install/pip#windows-wsl2_1).
 
 Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
 
