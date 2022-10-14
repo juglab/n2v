@@ -79,6 +79,7 @@ __Note:__ You can use the N2V2 functionality by providing the following three pa
 * `unet_residual=False`, by default set to  
 
 __Warning:__ Currently, N2V2 does only support 2D data.
+__Warning:__ We have not tested N2V2 together with struct-N2V.
 
 ## How to cite:
 ```
