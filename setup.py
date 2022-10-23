@@ -18,7 +18,7 @@ setup(name='n2v',
       long_description_content_type='text/markdown',
       url='https://github.com/juglab/n2v/',
       author='Tim-Oliver Buchholz, Alexander Krull',
-      author_email='tibuch@mpi-cbg.de, krull@mpi-cbg.de',
+      author_email='tim-oliver.buchholz@fmi.ch, a.f.f.krull@bham.ac.uk',
       license='BSD 3-Clause License',
       packages=find_packages(),
 
@@ -38,9 +38,12 @@ setup(name='n2v',
           'Programming Language :: Python :: 3.10',
       ],
 
-      scripts=['scripts/trainN2V.py',
-               'scripts/predictN2V.py'
-               ],
+
+      scripts=[
+          'scripts/trainN2V.py',
+          'scripts/predictN2V.py'
+      ],
+
 
       install_requires=[
           "numpy",
