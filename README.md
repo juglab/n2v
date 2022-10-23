@@ -41,9 +41,9 @@ conda activate n2v
 
 #### Install TensorFlow
 
-The best way to install is to follow the [Tensorflow guidelines](https://www.tensorflow.org/install/pip). 
+The best way to install TensorFLow is to follow the [Tensorflow guidelines](https://www.tensorflow.org/install/pip). 
 
-Note that running the following commands in your environment will allow you to use the GPU without having to each 
+Note that, after installing TensorFlow, running the following commands in your environment will allow you to use the GPU without having to each 
 time run an `export` command (refer to the [Tensorflow step by step](https://www.tensorflow.org/install/pip#linux_1)):
 ```bash
 mkdir -p $CONDA_PREFIX/etc/conda/activate.d
@@ -84,7 +84,7 @@ __Note:__ You can use the N2V2 functionality by providing the following three pa
 * `blurpool=True`, by default set to `False`
 * `skip_skipone=True`, by default set to `False`
 * `n2v_manipulator="median"`, by default set to `"uniform_withCP"`
-* `unet_residual=False`, by default set to  
+* `unet_residual=False`, by default set to `False`
 
 __Warning:__ Currently, N2V2 does only support 2D data.</br>
 __Warning:__ We have not tested N2V2 together with struct-N2V.
