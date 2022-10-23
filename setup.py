@@ -7,7 +7,7 @@ _dir = path.abspath(path.dirname(__file__))
 with open(path.join(_dir, 'n2v', 'version.py')) as f:
     exec(f.read())
 
-with open(path.join(_dir, 'README.md')) as f:
+with open(path.join(_dir, 'README.md'), encoding='UTF-8') as f:
     long_description = f.read()
 
 setup(name='n2v',
