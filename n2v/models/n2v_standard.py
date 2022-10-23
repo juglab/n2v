@@ -28,7 +28,7 @@ from ..utils.n2v_utils import pm_identity, pm_normal_additive, \
     tta_forward, tta_backward
 from ..nets.unet import build_single_unet_per_channel, build_unet
 
-from tifffile import imsave
+from tifffile import imwrite
 from csbdeep.utils.six import tempfile
 import shutil
 
@@ -300,7 +300,7 @@ class N2V(CARE):
         """
         if optimizer is None:
             from tensorflow.keras.optimizers import Adam
-            optimizer = Adam(lr=self.config.train_learning_rate)
+            optimizer = Adam(learning_rate=self.config.train_learning_rate)
         self.callbacks = self.prepare_model(self.keras_model, optimizer, self.config.train_loss, **kwargs)
 
         if self.basedir is not None:
@@ -486,8 +486,8 @@ class N2V(CARE):
 
         input_file = self.logdir / 'testinput.tif'
         output_file = self.logdir / 'testoutput.tif'
-        imsave(input_file, test_img)
-        imsave(output_file, test_output)
+        imwrite(input_file, test_img)
+        imwrite(output_file, test_output)
 
         with ZipFile(fname, 'a') as myzip:
             myzip.write(yml_file, arcname=os.path.basename(yml_file))

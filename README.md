@@ -24,23 +24,31 @@ OpenReview: [https://openreview.net/forum?id=IZfQYb4lHVq](https://openreview.net
 
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
-We have tested Noise2Void using Python 3.7 and tensorflow-gpu 2.4.1.
+We have tested Noise2Void using Python 3.9 and TensorFlow 2.7 and 2.10.
 
-Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.0 supports TensorFlow 2 only.
+Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.* supports TensorFlow 2 only.
 
 #### If you start from scratch...
 We recommend using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 If you do not yet have a strong opinion, just use it too!
 
-After installing Miniconda, the following lines might are likely the easiest way to get Tensorflow and CuDNN installed on your machine (_Note:_ Macs are not supported, and if you sit on a Windows machine all this might also require some modifications.):
+After installing Miniconda, create a conda environment:
 
 ```
-conda create -n n2v python=3.8 cudatoolkit=11.0 cudnn=8.0 -c conda-forge
+conda create -n 'n2v' python=3.9
 conda activate n2v
-pip install tensorflow==2.4
 ```
 
-Once this is done (or you had tensorflow et al. installed already), you can install N2V with one of the following two options:
+#### Install TensorFlow
+
+The best way to install is to follow the [Tensorflow guidelines](https://www.tensorflow.org/install/pip). 
+
+Note that running the following commands in your environment will allow you to use the GPU without having to each 
+time run an `export` command (refer to the [Tensorflow step by step](https://www.tensorflow.org/install/pip#linux_1)):
+```bash
+mkdir -p $CONDA_PREFIX/etc/conda/activate.d
+echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/' > $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+```
 
 #### Option 1: PIP (current stable release)
 ```

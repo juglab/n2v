@@ -4,12 +4,11 @@ from os import path
 
 _dir = path.abspath(path.dirname(__file__))
 
-with open(path.join(_dir,'n2v','version.py')) as f:
+with open(path.join(_dir, 'n2v', 'version.py')) as f:
     exec(f.read())
 
-with open(path.join(_dir,'README.md')) as f:
+with open(path.join(_dir, 'README.md')) as f:
     long_description = f.read()
-
 
 setup(name='n2v',
       version=__version__,
@@ -33,27 +32,30 @@ setup(name='n2v',
           'Topic :: Scientific/Engineering',
           'License :: OSI Approved :: BSD License',
 
-          'Programming Language :: Python :: 3.6',
           'Programming Language :: Python :: 3.7',
+          'Programming Language :: Python :: 3.8',
+          'Programming Language :: Python :: 3.9',
+          'Programming Language :: Python :: 3.10',
       ],
+
 
       scripts=[
           'scripts/trainN2V.py',
           'scripts/predictN2V.py'
       ],
 
+
       install_requires=[
           "numpy",
-          "scipy",
-          "matplotlib",
-          "six",
-          "keras>=2.1.1,<2.4.0",
-          "tifffile>=2020.5.11",
+          "tifffile",
           "imagecodecs>=2020.2.18",
-          "tqdm",
           "backports.tempfile;python_version<'3.4'",
-          "csbdeep>=0.6.0,<0.7.0",
+          "csbdeep>=0.7.2,<0.8.0",
           "Pillow",
           "ruamel.yaml>=0.16.10"
-        ]
+      ],
+
+      extras_require={
+          "testing": ["pytest"]
+      }
       )

@@ -45,12 +45,12 @@ class N2V_DataWrapper(RollingSequence):
 
         if self.dims == 2:
             self.patch_sampler = self.__subpatch_sampling2D__
-            self.box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int)
+            self.box_size = np.round(np.sqrt(100/perc_pix)).astype(np.int32)
             self.get_stratified_coords = self.__get_stratified_coords2D__
             self.rand_float = self.__rand_float_coords2D__(self.box_size)
         elif self.dims == 3:
             self.patch_sampler = self.__subpatch_sampling3D__
-            self.box_size = np.round(np.sqrt(100 / perc_pix)).astype(np.int)
+            self.box_size = np.round(np.sqrt(100 / perc_pix)).astype(np.int32)
             self.get_stratified_coords = self.__get_stratified_coords3D__
             self.rand_float = self.__rand_float_coords3D__(self.box_size)
         else:
@@ -100,7 +100,7 @@ class N2V_DataWrapper(RollingSequence):
         each point in coords corresponds to the center of the mask.
         then for point in the mask with value=1 we assign a random value
         """
-        coords = np.array(coords).astype(np.int)
+        coords = np.array(coords).astype(np.int32)
         ndim = mask.ndim
         center = np.array(mask.shape)//2
         ## leave the center value alone

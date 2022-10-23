@@ -5,7 +5,6 @@ import zipfile
 
 
 def test_generate_patches_2D():
-
     if not os.path.isdir('data'):
         os.mkdir('data')
     zip_path = "data/RGB.zip"
@@ -25,8 +24,8 @@ def test_generate_patches_2D():
     patches = datagen.generate_patches_from_list(imgs, shape=(110, 280))
     assert len(patches) == 100
 
-def test_generate_patches_3D():
 
+def test_generate_patches_3D():
     if not os.path.isdir('data'):
         os.mkdir('data')
     zip_path = 'data/flywing-data.zip'
@@ -44,4 +43,3 @@ def test_generate_patches_3D():
     assert len(patches) == 1
     patches = datagen.generate_patches_from_list(imgs[:1], shape=(5, 52, 174))
     assert len(patches) == 210
-

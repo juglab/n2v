@@ -60,3 +60,10 @@ class MaxBlurPool2D(Layer):
             int(np.ceil(input_shape[2] / 2)),
             input_shape[3],
         )
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({
+            "pool": self.pool
+        })
+        return config
