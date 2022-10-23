@@ -1,4 +1,4 @@
-[![](https://travis-ci.com/juglab/n2v.svg?branch=master)](https://travis-ci.com/juglab/n2v)
+![example workflow](https://github.com/juglab/n2v/actions/workflows/test_and_deploy.yml/badge.svg)
 [![N2V_video](img/n2v_vimeo.png)](https://vimeo.com/305045007)
 
 # Noise2Void - Learning Denoising from Single Noisy Images
