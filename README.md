@@ -3,13 +3,24 @@
 
 # Noise2Void - Learning Denoising from Single Noisy Images
 Alexander Krull<sup>1,2</sup>, Tim-Oliver Buchholz<sup>2</sup>, Florian Jug</br>
-<sup>1</sup><code>krull@mpi-cbg.de</code>, <sup>2</sup>Authors contributed equally
+<sup>1</sup><code>a.f.f.krull@bham.ac.uk</code>, <sup>2</sup>Authors contributed equally
 
 The field of image denoising is currently dominated by discriminative deep learning methods that are trained on pairs of noisy input and clean target images. Recently it has been shown that such methods can also be trained without clean targets. Instead, independent pairs of noisy images can be used, in an approach known as NOISE2NOISE (N2N). Here, we introduce NOISE2VOID (N2V), a training scheme that takes this idea one step further. It does not require noisy image pairs, nor clean target images.  Consequently, N2V allows us to train directly on the body of data to be denoised and can therefore be applied when other methods cannot. Especially interesting is the application to biomedical image data, where the acquisition of training targets, clean or noisy, is frequently not possible.  We compare the performance of N2V to approaches that have either clean target images and/or noisy image pairs available. Intuitively, N2V cannot be expected to outperform methods that have more information available during training. Still, we observe that the denoising performance of NOISE2VOID drops in moderation and compares favorably to training-free denoising methods.
 
 Paper: https://arxiv.org/abs/1811.10980
 
 Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) ([github](https://github.com/csbdeep/csbdeep)).
+
+# N2V2 - Fixing Noise2Void Checkerboard Artifacts with Modified Sampling Strategies and a Tweaked Network Architecture
+Eva Höck<sup>1,⚹</sup>, Tim-Oliver Buchholz<sup>2,⚹</sup>, Anselm Brachmann<sup>1,⚹</sup>, Florian Jug<sup>3,⁜</sup>, and Alexander Freytag<sup>1,⁜</sup></br>
+<sup>1</sup>Carl Zeiss AG, Germany</br>
+<sup>2</sup>Facility for Advanced Imaging and Microscopy, Friedrich Miescher Institute for Biomedical Research, Basel, Switzerland</br>
+<sup>3</sup>Jug Group, Fondazione Human Technopole, Milano, Italy</br>
+<sup>⚹, ⁜</sup>Equal contribution</br>
+
+In recent years, neural network based image denoising approaches have revolutionized the analysis of biomedical microscopy data. Self-supervised methods, such as Noise2Void (N2V), are applicable to virtually all noisy datasets, even without dedicated training data being available. Arguably, this facilitated the fast and widespread adoption of N2V throughout the life sciences. Unfortunately, the blind-spot training underlying N2V can lead to rather visible checkerboard artifacts, thereby reducing the quality of final predictions considerably. In this work, we present two modifications to the vanilla N2V setup that both help to reduce the unwanted artifacts considerably. Firstly, we propose a modified network architecture, i.e. using BlurPool instead of MaxPool layers throughout the used UNet, rolling back the residual-UNet to a non-residual UNet, and eliminating the skip connections at the uppermost UNet level. Additionally, we propose new replacement strategies to determine the pixel intensity values that fill in the elected blind-spot pixels. We validate our modifications on a range of microscopy and natural image data. Based on added synthetic noise from  multiple noise types and at varying amplitudes, we show that both proposed modifications push the current state-of-the-art for fully self-supervised image denoising.
+
+OpenReview: [https://openreview.net/forum?id=IZfQYb4lHVq](https://openreview.net/forum?id=IZfQYb4lHVq)
 
 ## Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
@@ -58,6 +69,18 @@ Have a look at our jupyter notebook:
 * [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
 * [2D StructN2V example synth_mem](https://github.com/juglab/n2v/tree/master/examples/2D/structN2V_2D_synth_mem/)
 
+Coming soon:
+* N2V2 example notebooks.
+
+__Note:__ You can use the N2V2 functionality by providing the following three parameters to the N2V-Config object:
+* `blurpool=True`, by default set to `False`
+* `skip_skipone=True`, by default set to `False`
+* `n2v_manipulator="median"`, by default set to `"uniform_withCP"`
+* `unet_residual=False`, by default set to  
+
+__Warning:__ Currently, N2V2 does only support 2D data.</br>
+__Warning:__ We have not tested N2V2 together with struct-N2V.
+
 ## How to cite:
 ```
 @inproceedings{krull2019noise2void,
@@ -67,6 +90,7 @@ Have a look at our jupyter notebook:
   pages={2129--2137},
   year={2019}
 }
+N2V2 citation coming soon.
 ```
 
 see [here](https://github.com/mpicbg-csbd/structured_N2V) for more info on `StructN2V`.
