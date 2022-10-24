@@ -9,7 +9,7 @@ The field of image denoising is currently dominated by discriminative deep learn
 
 Paper: https://arxiv.org/abs/1811.10980
 
-Our implementation is based on [CSBDEEP](http://csbdeep.bioimagecomputing.com) ([github](https://github.com/csbdeep/csbdeep)).
+Our implementation is based on [CSBDeep](http://csbdeep.bioimagecomputing.com) ([github](https://github.com/csbdeep/csbdeep)).
 
 # N2V2 - Fixing Noise2Void Checkerboard Artifacts with Modified Sampling Strategies and a Tweaked Network Architecture
 Eva Höck<sup>1,⚹</sup>, Tim-Oliver Buchholz<sup>2,⚹</sup>, Anselm Brachmann<sup>1,⚹</sup>, Florian Jug<sup>3,⁜</sup>, and Alexander Freytag<sup>1,⁜</sup></br>
@@ -22,13 +22,13 @@ In recent years, neural network based image denoising approaches have revolution
 
 OpenReview: [https://openreview.net/forum?id=IZfQYb4lHVq](https://openreview.net/forum?id=IZfQYb4lHVq)
 
-## Installation
+# Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
 We have tested Noise2Void using Python 3.9 and TensorFlow 2.7 and 2.10.
 
 Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.* supports TensorFlow 2 only.
 
-#### If you start from scratch...
+## If you start from scratch...
 We recommend using [miniconda](https://docs.conda.io/en/latest/miniconda.html).
 If you do not yet have a strong opinion, just use it too!
 
@@ -39,7 +39,7 @@ conda create -n 'n2v' python=3.9
 conda activate n2v
 ```
 
-#### Install TensorFlow
+## Install TensorFlow
 
 The best way to install TensorFLow is to follow the [Tensorflow guidelines](https://www.tensorflow.org/install/pip). 
 
@@ -50,12 +50,12 @@ mkdir -p $CONDA_PREFIX/etc/conda/activate.d
 echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/' > $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
 ```
 
-#### Option 1: PIP (current stable release)
+## Option 1: PIP (current stable release)
 ```
 $ pip install n2v
 ```
 
-#### Option 2: Git-Clone and install from sources (current master-branch version)
+## Option 2: Git-Clone and install from sources (current master-branch version)
 This option is ideal if you want to edit the code. Clone the repository:
 
 ```
@@ -69,13 +69,20 @@ $ pip install -e .
 ```
 You are now ready to run Noise2Void.
 
-## How to use it?
+# How to use it?
+
+## Jupyter notebooks
 Have a look at our jupyter notebook:
 * [2D example BSD68](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_BSD68)
 * [2D example SEM](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_SEM)
 * [2D example RGB](https://github.com/juglab/n2v/tree/master/examples/2D/denoising2D_RGB)
 * [3D example](https://github.com/juglab/n2v/tree/master/examples/3D)
 * [2D StructN2V example synth_mem](https://github.com/juglab/n2v/tree/master/examples/2D/structN2V_2D_synth_mem/)
+
+In order to run the notebooks, install jupyter in your conda environment:
+```bash
+pip install jupyter
+```
 
 Coming soon:
 * N2V2 example notebooks.
@@ -89,7 +96,12 @@ __Note:__ You can use the N2V2 functionality by providing the following three pa
 __Warning:__ Currently, N2V2 does only support 2D data.</br>
 __Warning:__ We have not tested N2V2 together with struct-N2V.
 
-## How to cite:
+## napari
+
+N2V, N2V2 and structN2V are [available in napari](https://www.napari-hub.org/plugins/napari-n2v)!
+
+
+# How to cite:
 ```
 @inproceedings{krull2019noise2void,
   title={Noise2void-learning denoising from single noisy images},
