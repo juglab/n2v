@@ -5,12 +5,13 @@ import tifffile
 from matplotlib import image
 from csbdeep.utils import _raise
 
-class N2V_DataGenerator():
+
+class N2V_DataGenerator:
     """
     The 'N2V_DataGenerator' enables training and validation data generation for Noise2Void.
     """
 
-    def load_imgs(self, files, dims='YX'):
+    def load_imgs(self, files, dims="YX"):
         """
         Helper to read a list of files. The images are not required to have same size,
         but have to be of same dimensionality.
@@ -27,60 +28,73 @@ class N2V_DataGenerator():
         images : list(array(float))
                  A list of the read tif-files. The images have dimensionality 'SZYXC' or 'SYXC'
         """
-        assert 'Y' in dims and 'X' in dims, "'dims' has to contain 'X' and 'Y'."
+        assert "Y" in dims and "X" in dims, "'dims' has to contain 'X' and 'Y'."
 
         tmp_dims = dims
-        for b in ['X', 'Y', 'Z', 'T', 'C']:
-            assert tmp_dims.count(b) <= 1, "'dims' has to contain {} at most once.".format(b)
-            tmp_dims = tmp_dims.replace(b, '')
+        for b in ["X", "Y", "Z", "T", "C"]:
+            assert (
+                tmp_dims.count(b) <= 1
+            ), "'dims' has to contain {} at most once.".format(b)
+            tmp_dims = tmp_dims.replace(b, "")
 
         assert len(tmp_dims) == 0, "Unknown dimensions in 'dims'."
 
-        if 'Z' in dims:
-            net_axes = 'ZYXC'
+        if "Z" in dims:
+            net_axes = "ZYXC"
         else:
-            net_axes = 'YXC'
+            net_axes = "YXC"
 
         move_axis_from = ()
         move_axis_to = ()
         for d, b in enumerate(dims):
             move_axis_from += tuple([d])
-            if b == 'T':
+            if b == "T":
                 move_axis_to += tuple([0])
-            elif b == 'C':
+            elif b == "C":
                 move_axis_to += tuple([-1])
-            elif b in 'XYZ':
-                if 'T' in dims:
-                    move_axis_to += tuple([net_axes.index(b)+1])
+            elif b in "XYZ":
+                if "T" in dims:
+                    move_axis_to += tuple([net_axes.index(b) + 1])
                 else:
                     move_axis_to += tuple([net_axes.index(b)])
         imgs = []
         for f in files:
-            if f.endswith('.tif') or f.endswith('.tiff'):
+            if f.endswith(".tif") or f.endswith(".tiff"):
                 imread = tifffile.imread
-            elif f.endswith('.png'):
+            elif f.endswith(".png") or f.endswith(".bmp"):
                 imread = image.imread
-            elif f.endswith('.jpg') or f.endswith('.jpeg') or f.endswith('.JPEG') or f.endswith('.JPG'):
-                _raise(Exception("JPEG is not supported, because it is not loss-less and breaks the pixel-wise independence assumption."))
+            elif (
+                f.endswith(".jpg")
+                or f.endswith(".jpeg")
+                or f.endswith(".JPEG")
+                or f.endswith(".JPG")
+            ):
+                _raise(
+                    Exception(
+                        "JPEG is not supported, because it is not loss-less and breaks the pixel-wise independence assumption."
+                    )
+                )
             else:
                 _raise("Filetype '{}' is not supported.".format(f))
 
             img = imread(f).astype(np.float32)
-            assert len(img.shape) == len(dims), "Number of image dimensions doesn't match 'dims'."
+            assert len(img.shape) == len(
+                dims
+            ), "Number of image dimensions doesn't match 'dims'."
 
             img = np.moveaxis(img, move_axis_from, move_axis_to)
 
-            if not ('T' in dims):    
+            if not ("T" in dims):
                 img = img[np.newaxis]
 
-            if not ('C' in dims):
+            if not ("C" in dims):
                 img = img[..., np.newaxis]
 
             imgs.append(img)
 
         return imgs
 
-    def load_imgs_from_directory(self, directory, filter='*.tif', dims='YX'):
+    def load_imgs_from_directory(self, directory, filter="*.tif", dims="YX"):
         """
         Helper to read all files which match 'filter' from a directory. The images are not required to have same size,
         but have to be of same dimensionality.
@@ -104,8 +118,14 @@ class N2V_DataGenerator():
         files.sort()
         return self.load_imgs(files, dims=dims)
 
-
-    def generate_patches_from_list(self, data, num_patches_per_img=None, shape=(256, 256), augment=True, shuffle=False):
+    def generate_patches_from_list(
+        self,
+        data,
+        num_patches_per_img=None,
+        shape=(256, 256),
+        augment=True,
+        shuffle=False,
+    ):
         """
         Extracts patches from 'list_data', which is a list of images, and returns them in a 'numpy-array'. The images
         can have different dimensionality.
@@ -132,7 +152,12 @@ class N2V_DataGenerator():
         patches = []
         for img in data:
             for s in range(img.shape[0]):
-                p = self.generate_patches(img[s][np.newaxis], num_patches=num_patches_per_img, shape=shape, augment=augment)
+                p = self.generate_patches(
+                    img[s][np.newaxis],
+                    num_patches=num_patches_per_img,
+                    shape=shape,
+                    augment=augment,
+                )
                 patches.append(p)
 
         patches = np.concatenate(patches, axis=0)
@@ -166,7 +191,9 @@ class N2V_DataGenerator():
                   The dimensions are 'SZYXC' or 'SYXC'
         """
 
-        patches = self.__extract_patches__(data, num_patches=num_patches, shape=shape, n_dims=len(data.shape)-2)
+        patches = self.__extract_patches__(
+            data, num_patches=num_patches, shape=shape, n_dims=len(data.shape) - 2
+        )
         if shape[-2] == shape[-1]:
             if augment:
                 patches = self.__augment_patches__(patches=patches)
@@ -175,7 +202,7 @@ class N2V_DataGenerator():
                 print("XY-Plane is not square. Omit augmentation!")
 
         np.random.shuffle(patches)
-        print('Generated patches:', patches.shape)
+        print("Generated patches:", patches.shape)
         return patches
 
     def __extract_patches__(self, data, num_patches=None, shape=(256, 256), n_dims=2):
@@ -185,7 +212,7 @@ class N2V_DataGenerator():
                 if data.shape[1] > shape[0] and data.shape[2] > shape[1]:
                     for y in range(0, data.shape[1] - shape[0] + 1, shape[0]):
                         for x in range(0, data.shape[2] - shape[1] + 1, shape[1]):
-                            patches.append(data[:, y:y + shape[0], x:x + shape[1]])
+                            patches.append(data[:, y : y + shape[0], x : x + shape[1]])
 
                     return np.concatenate(patches)
                 elif data.shape[1] == shape[0] and data.shape[2] == shape[1]:
@@ -193,28 +220,42 @@ class N2V_DataGenerator():
                 else:
                     print("'shape' is too big.")
             elif n_dims == 3:
-                if data.shape[1] > shape[0] and data.shape[2] > shape[1] and data.shape[3] > shape[2]:
-                    for z in range(0, data.shape[1] - shape[0] + 1,  shape[0]):
+                if (
+                    data.shape[1] > shape[0]
+                    and data.shape[2] > shape[1]
+                    and data.shape[3] > shape[2]
+                ):
+                    for z in range(0, data.shape[1] - shape[0] + 1, shape[0]):
                         for y in range(0, data.shape[2] - shape[1] + 1, shape[1]):
                             for x in range(0, data.shape[3] - shape[2] + 1, shape[2]):
-                                patches.append(data[:, z:z + shape[0], y:y + shape[1], x:x + shape[2]])
+                                patches.append(
+                                    data[
+                                        :,
+                                        z : z + shape[0],
+                                        y : y + shape[1],
+                                        x : x + shape[2],
+                                    ]
+                                )
 
                     return np.concatenate(patches)
-                elif data.shape[1] == shape[0] and data.shape[2] == shape[1] and data.shape[3] == shape[2]:
+                elif (
+                    data.shape[1] == shape[0]
+                    and data.shape[2] == shape[1]
+                    and data.shape[3] == shape[2]
+                ):
                     return data
                 else:
                     print("'shape' is too big.")
             else:
-                print('Not implemented for more than 4 dimensional (ZYXC) data.')
+                print("Not implemented for more than 4 dimensional (ZYXC) data.")
         else:
             patches = []
             if n_dims == 2:
                 for i in range(num_patches):
-                    y, x = np.random.randint(0, data.shape[1] - shape[0] + 1), np.random.randint(0,
-                                                                                                 data.shape[
-                                                                                                          2] - shape[
-                                                                                                          1] + 1)
-                    patches.append(data[0, y:y + shape[0], x:x + shape[1]])
+                    y, x = np.random.randint(
+                        0, data.shape[1] - shape[0] + 1
+                    ), np.random.randint(0, data.shape[2] - shape[1] + 1)
+                    patches.append(data[0, y : y + shape[0], x : x + shape[1]])
 
                 if len(patches) > 1:
                     return np.stack(patches)
@@ -222,31 +263,41 @@ class N2V_DataGenerator():
                     return np.array(patches)[np.newaxis]
             elif n_dims == 3:
                 for i in range(num_patches):
-                    z, y, x = np.random.randint(0, data.shape[1] - shape[0] + 1), np.random.randint(0,
-                                                                                                    data.shape[
-                                                                                                             2] - shape[
-                                                                                                             1] + 1), np.random.randint(
-                        0, data.shape[3] - shape[2] + 1)
-                    patches.append(data[0, z:z + shape[0], y:y + shape[1], x:x + shape[2]])
+                    z, y, x = (
+                        np.random.randint(0, data.shape[1] - shape[0] + 1),
+                        np.random.randint(0, data.shape[2] - shape[1] + 1),
+                        np.random.randint(0, data.shape[3] - shape[2] + 1),
+                    )
+                    patches.append(
+                        data[0, z : z + shape[0], y : y + shape[1], x : x + shape[2]]
+                    )
 
                 if len(patches) > 1:
                     return np.stack(patches)
                 else:
                     return np.array(patches)[np.newaxis]
             else:
-                print('Not implemented for more than 4 dimensional (ZYXC) data.')
+                print("Not implemented for more than 4 dimensional (ZYXC) data.")
 
     def __augment_patches__(self, patches):
         if len(patches.shape[1:-1]) == 2:
-            augmented = np.concatenate((patches,
-                                        np.rot90(patches, k=1, axes=(1, 2)),
-                                        np.rot90(patches, k=2, axes=(1, 2)),
-                                        np.rot90(patches, k=3, axes=(1, 2))))
+            augmented = np.concatenate(
+                (
+                    patches,
+                    np.rot90(patches, k=1, axes=(1, 2)),
+                    np.rot90(patches, k=2, axes=(1, 2)),
+                    np.rot90(patches, k=3, axes=(1, 2)),
+                )
+            )
         elif len(patches.shape[1:-1]) == 3:
-            augmented = np.concatenate((patches,
-                                        np.rot90(patches, k=1, axes=(2, 3)),
-                                        np.rot90(patches, k=2, axes=(2, 3)),
-                                        np.rot90(patches, k=3, axes=(2, 3))))
+            augmented = np.concatenate(
+                (
+                    patches,
+                    np.rot90(patches, k=1, axes=(2, 3)),
+                    np.rot90(patches, k=2, axes=(2, 3)),
+                    np.rot90(patches, k=3, axes=(2, 3)),
+                )
+            )
 
         augmented = np.concatenate((augmented, np.flip(augmented, axis=-2)))
         return augmented
