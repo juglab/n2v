@@ -77,8 +77,8 @@ class N2V_DataGenerator():
             elif b == 'C':
                 move_axis_to += tuple([-1])
             elif b in 'XYZ':
-                if 'T' in dims:
-                    move_axis_to += tuple([net_axes.index(b) + 1])
+                if 'T' in dims:    
+                    move_axis_to += tuple([net_axes.index(b)+1])
                 else:
                     move_axis_to += tuple([net_axes.index(b)])
         imgs = []
@@ -118,8 +118,10 @@ class N2V_DataGenerator():
                  A list of the read tif-files. The images have dimensionality 'SZYXC' or 'SYXC'
         """
 
-        files = sorted(glob(join(directory, filter)))
+        files = glob(join(directory, filter))
+        files.sort()
         return self.load_imgs(files, dims=dims)
+
 
     def generate_patches_from_list(self, data, num_patches_per_img=None, shape=(256, 256), augment=True, shuffle=False):
         """
@@ -148,10 +150,7 @@ class N2V_DataGenerator():
         patches = []
         for img in data:
             for s in range(img.shape[0]):
-                p = self.generate_patches(img[s][np.newaxis],
-                                          num_patches=num_patches_per_img,
-                                          shape=shape,
-                                          augment=augment)
+                p = self.generate_patches(img[s][np.newaxis], num_patches=num_patches_per_img, shape=shape, augment=augment)
                 patches.append(p)
 
         patches = np.concatenate(patches, axis=0)
@@ -185,7 +184,7 @@ class N2V_DataGenerator():
                   The dimensions are 'SZYXC' or 'SYXC'
         """
 
-        patches = self.__extract_patches__(data, num_patches=num_patches, shape=shape, n_dims=len(data.shape) - 2)
+        patches = self.__extract_patches__(data, num_patches=num_patches, shape=shape, n_dims=len(data.shape)-2)
         if shape[-2] == shape[-1]:
             if augment:
                 patches = self.__augment_patches__(patches=patches)
@@ -198,7 +197,7 @@ class N2V_DataGenerator():
         return patches
 
     def __extract_patches__(self, data, num_patches=None, shape=(256, 256), n_dims=2):
-        if num_patches is None:
+        if num_patches == None:
             patches = []
             if n_dims == 2:
                 if data.shape[1] > shape[0] and data.shape[2] > shape[1]:
@@ -213,7 +212,7 @@ class N2V_DataGenerator():
                     print("'shape' is too big.")
             elif n_dims == 3:
                 if data.shape[1] > shape[0] and data.shape[2] > shape[1] and data.shape[3] > shape[2]:
-                    for z in range(0, data.shape[1] - shape[0] + 1, shape[0]):
+                    for z in range(0, data.shape[1] - shape[0] + 1,  shape[0]):
                         for y in range(0, data.shape[2] - shape[1] + 1, shape[1]):
                             for x in range(0, data.shape[3] - shape[2] + 1, shape[2]):
                                 patches.append(data[:, z:z + shape[0], y:y + shape[1], x:x + shape[2]])
@@ -231,8 +230,8 @@ class N2V_DataGenerator():
                 for i in range(num_patches):
                     y, x = np.random.randint(0, data.shape[1] - shape[0] + 1), np.random.randint(0,
                                                                                                  data.shape[
-                                                                                                     2] - shape[
-                                                                                                     1] + 1)
+                                                                                                          2] - shape[
+                                                                                                          1] + 1)
                     patches.append(data[0, y:y + shape[0], x:x + shape[1]])
 
                 if len(patches) > 1:
@@ -243,8 +242,8 @@ class N2V_DataGenerator():
                 for i in range(num_patches):
                     z, y, x = np.random.randint(0, data.shape[1] - shape[0] + 1), np.random.randint(0,
                                                                                                     data.shape[
-                                                                                                        2] - shape[
-                                                                                                        1] + 1), np.random.randint(
+                                                                                                             2] - shape[
+                                                                                                             1] + 1), np.random.randint(
                         0, data.shape[3] - shape[2] + 1)
                     patches.append(data[0, z:z + shape[0], y:y + shape[1], x:x + shape[2]])
 
