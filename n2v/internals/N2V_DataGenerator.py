@@ -5,12 +5,37 @@ import tifffile
 from matplotlib import image
 from csbdeep.utils import _raise
 
+
+def imread(file_path) -> np.array:
+    '''Read images of different formats.
+
+    Parameters
+    ----------
+    file_path : str
+
+    Returns
+    -------
+    np.array of type np.float32
+    '''
+
+    if file_path.endswith('.tif') or file_path.endswith('.tiff'):
+        img = tifffile.imread(file_path)
+    elif file_path.endswith('.png'):
+        img = image.imread(file_path)
+    elif file_path.endswith('.jpg') or file_path.endswith('.jpeg') or file_path.endswith('.JPEG') or file_path.endswith('.JPG'):
+        _raise(Exception("JPEG is not supported, because it is not loss-less and breaks the pixel-wise independence assumption."))
+    else:
+        _raise("Filetype '{}' is not supported.".format(file_path))
+
+    return img.astype(np.float32)
+
+
 class N2V_DataGenerator():
     """
     The 'N2V_DataGenerator' enables training and validation data generation for Noise2Void.
     """
 
-    def load_imgs(self, files, dims='YX'):
+    def load_imgs(self, files, dims='YX', image_reader=imread):
         """
         Helper to read a list of files. The images are not required to have same size,
         but have to be of same dimensionality.
@@ -18,9 +43,11 @@ class N2V_DataGenerator():
         Parameters
         ----------
         files  : list(String)
-                 List of paths to tiff-files.
+                 List of paths to image-files.
         dims   : String, optional(default='YX')
                  Dimensions of the images to read. Known dimensions are: 'TZYXC'
+        image_reader: callable
+                 function that reads images from files and returns numpy arrays of type np.float32.
 
         Returns
         -------
@@ -56,16 +83,7 @@ class N2V_DataGenerator():
                     move_axis_to += tuple([net_axes.index(b)])
         imgs = []
         for f in files:
-            if f.endswith('.tif') or f.endswith('.tiff'):
-                imread = tifffile.imread
-            elif f.endswith('.png'):
-                imread = image.imread
-            elif f.endswith('.jpg') or f.endswith('.jpeg') or f.endswith('.JPEG') or f.endswith('.JPG'):
-                _raise(Exception("JPEG is not supported, because it is not loss-less and breaks the pixel-wise independence assumption."))
-            else:
-                _raise("Filetype '{}' is not supported.".format(f))
-
-            img = imread(f).astype(np.float32)
+            img = image_reader(f)
             assert len(img.shape) == len(dims), "Number of image dimensions doesn't match 'dims'."
 
             img = np.moveaxis(img, move_axis_from, move_axis_to)
