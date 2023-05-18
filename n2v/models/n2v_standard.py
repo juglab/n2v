@@ -17,6 +17,7 @@ import json
 import os
 import datetime
 import warnings
+from datetime import datetime
 from zipfile import ZipFile
 from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
@@ -432,7 +433,7 @@ class N2V(CARE):
             save_json(vars(self.config), str(config_file))
 
     @suppress_without_basedir(warn=True)
-    def export_TF(self, name, description, authors, test_img, axes, patch_shape, fname=None):
+    def export_TF(self, name, description, authors, test_img, axes, patch_shape, license='BSD-3-Clause', fname=None):
         """
         name: String
             Name of the model. 
@@ -475,19 +476,19 @@ class N2V(CARE):
 
         # Replace : with -
         name = name.replace(':', ' -')
-        yml_dict = self.get_yml_dict(name, description, authors, test_img, axes, patch_shape=patch_shape)
+        yml_dict = self.get_yml_dict(name, description, authors, license, patch_shape=patch_shape)
         yml_file = self.logdir / 'model.yaml'
 
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
         yaml = YAML(typ='rt')
         yaml.default_flow_style = False
         with open(yml_file, 'w') as outfile:
-            yaml.dump(yml_dict, outfile)
+            yaml.dump(yml_dict, outfile, )
 
-        input_file = self.logdir / 'testinput.tif'
-        output_file = self.logdir / 'testoutput.tif'
-        imwrite(input_file, test_img)
-        imwrite(output_file, test_output)
+        input_file = self.logdir / 'testinput.npy'
+        output_file = self.logdir / 'testoutput.npy'
+        np.save(input_file, test_img)
+        np.save(output_file, test_output)
 
         with ZipFile(fname, 'a') as myzip:
             myzip.write(yml_file, arcname=os.path.basename(yml_file))
@@ -496,12 +497,12 @@ class N2V(CARE):
 
         print("\nModel exported in BioImage ModelZoo format:\n%s" % str(fname.resolve()))
 
-    def get_yml_dict(self, name, description, authors, test_img, axes, patch_shape=None):
-        if (patch_shape != None):
+    def get_yml_dict(self, name, description, authors, licence, patch_shape=None):
+        if patch_shape != None:
             self.config.patch_shape = patch_shape
 
-        ''' Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used more than
-        once in the dictionary'''
+        '''Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used 
+        more than once in the dictionary'''
         mean_val = []
         mean_val1 = []
         for ele in self.config.means:
@@ -517,22 +518,18 @@ class N2V(CARE):
 
         axes_val = 'b' + self.config.axes
         axes_val = axes_val.lower()
-        val = 2 ** self.config.unet_n_depth
-        val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
-        min_val = [1, val, val, self.config.n_channel_in]
-        step_val = [1, val, val, 0]
-        halo_val = [0, val1, val1, 0]
+        halo = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
+        min_shape = halo * 2 + 1
+        min_shape_val = [1, min_shape, min_shape, self.config.n_channel_in]
+        step_val = [0, min_shape, min_shape, 0]
+        halo_val = [0, halo, halo, 0]
         scale_val = [1, 1, 1, 1]
         offset_val = [0, 0, 0, 0]
 
-        yaml = YAML(typ='rt')
-        with open(self.logdir / 'config.json', 'r') as f:
-            tr_kwargs_val = yaml.load(f)
-
-        if (self.config.n_dim == 3):
-            min_val = [1, val, val, val, self.config.n_channel_in]
-            step_val = [1, val, val, val, 0]
-            halo_val = [0, val1, val1, val1, 0]
+        if self.config.n_dim == 3:
+            min_shape_val = [1, min_shape, min_shape, min_shape, self.config.n_channel_in]
+            step_val = [0, min_shape, min_shape, min_shape, 0]
+            halo_val = [0, halo, halo, halo, 0]
             scale_val = [1, 1, 1, 1, 1]
             offset_val = [0, 0, 0, 0, 0]
 
@@ -540,57 +537,41 @@ class N2V(CARE):
             'name': name,
             'description': description,
             'cite': [{
-                'text': 'Krull, A. and Buchholz, T. and Jug, F. Noise2void - learning denoising from single noisy images.\nProceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2019)',
+                'text': 'Krull, A. and Buchholz, T. and Jug, F. Noise2void - learning denoising from single noisy '
+                        'images.\nProceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2019)',
                 'doi': '10.1109/CVPR.2019.00223'
             }],
             'authors': authors,
-            'language': 'python',
-            'framework': 'tensorflow',
-            'format_version': '0.2.0-csbdeep',
-            'source': 'n2v',
-            'test_input': 'testinput.tif',
-            'test_output': 'testoutput.tif',
+            'documentation': 'https://github.com/juglab/n2v/blob/main/README.md',
+            'format_version': '0.4.9',
             'inputs': [{
                 'name': 'input',
                 'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': in_data_range_val,
-                'halo': halo_val,
                 'shape': {
-                    'min': min_val,
+                    'min': min_shape_val,
                     'step': step_val
                 }
             }],
+            'license': licence,
             'outputs': [{
-                'name': self.keras_model.layers[-1].output.name,
+                'name': 'output',
                 'axes': axes_val,
                 'data_type': 'float32',
                 'data_range': out_data_range_val,
+                'halo': halo_val,
                 'shape': {
-                    'reference_input': 'input',
+                    'reference_tensor': 'input',
                     'scale': scale_val,
                     'offset': offset_val
                 }
             }],
-            'training': {
-                'source': 'n2v.train()',
-                'kwargs': tr_kwargs_val
-            },
-            'prediction': {
-                'weights': {'source': './variables/variables'},
-                'preprocess': [{
-                    'kwargs': {
-                        'mean': mean_val,
-                        'stdDev': std_val
-                    }
-                }],
-                'postprocess': [{
-                    'kwargs': {
-                        'mean': mean_val1,
-                        'stdDev': std_val1
-                    }
-                }]
-            }
+            'test_inputs': ['./testinput.npy'],
+            'test_outputs': ['./testoutput.npy'],
+            'timestamp': datetime.now().isoformat(),
+            'type': 'model',
+            'weights': {'tensorflow_saved_model_bundle': {'source': './saved_model.pb'}}
         }
 
         return yml_dict
