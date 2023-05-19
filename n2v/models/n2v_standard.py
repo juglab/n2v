@@ -462,6 +462,9 @@ class N2V(CARE):
                 test_output = np.moveaxis(test_output, z_dim, 0)
             test_output = test_output[int(test_output.shape[0] / 2)]
 
+        if patch_shape != None:
+            self.config.patch_shape = patch_shape
+
         # CSBDeep Export
         meta = {
             'type': self.__class__.__name__,
@@ -476,7 +479,7 @@ class N2V(CARE):
 
         # Replace : with -
         name = name.replace(':', ' -')
-        yml_dict = self.get_yml_dict(name, description, authors, license, patch_shape=patch_shape)
+        yml_dict = self.get_yml_dict(name, description, authors, license, axes)
         yml_file = self.logdir / 'model.yaml'
 
         '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
@@ -497,41 +500,31 @@ class N2V(CARE):
 
         print("\nModel exported in BioImage ModelZoo format:\n%s" % str(fname.resolve()))
 
-    def get_yml_dict(self, name, description, authors, licence, patch_shape=None):
-        if patch_shape != None:
-            self.config.patch_shape = patch_shape
-
-        '''Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used 
-        more than once in the dictionary'''
-        mean_val = []
-        mean_val1 = []
-        for ele in self.config.means:
-            mean_val.append(float(ele))
-            mean_val1.append(float(ele))
-        std_val = []
-        std_val1 = []
-        for ele in self.config.stds:
-            std_val.append(float(ele))
-            std_val1.append(float(ele))
+    def get_yml_dict(self, name, description, authors, licence, axes):
         in_data_range_val = ['-inf', 'inf']
         out_data_range_val = ['-inf', 'inf']
 
-        axes_val = 'b' + self.config.axes
-        axes_val = axes_val.lower()
         halo = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
         min_shape = halo * 2 + 1
-        min_shape_val = [1, min_shape, min_shape, self.config.n_channel_in]
-        step_val = [0, min_shape, min_shape, 0]
-        halo_val = [0, halo, halo, 0]
-        scale_val = [1, 1, 1, 1]
-        offset_val = [0, 0, 0, 0]
 
-        if self.config.n_dim == 3:
-            min_shape_val = [1, min_shape, min_shape, min_shape, self.config.n_channel_in]
-            step_val = [0, min_shape, min_shape, min_shape, 0]
-            halo_val = [0, halo, halo, halo, 0]
-            scale_val = [1, 1, 1, 1, 1]
-            offset_val = [0, 0, 0, 0, 0]
+        axes_val = axes.lower()
+        num_axes = len(axes_val)
+
+        offset_val = [0] * num_axes
+        scale_val = [1] * num_axes
+        min_shape_val = [min_shape] * self.config.n_dim
+        step_val = [1] * self.config.n_dim
+        halo_val = [halo] * self.config.n_dim
+
+        if 'b' in axes:
+            min_shape_val = [1] + min_shape_val
+            step_val = [0] + step_val
+            halo_val = [0] + halo_val
+
+        if 'c' in axes:
+            min_shape_val = min_shape_val + [self.config.n_channel_in]
+            step_val = step_val + [0]
+            halo_val = halo_val + [0]
 
         yml_dict = {
             'name': name,
@@ -571,7 +564,12 @@ class N2V(CARE):
             'test_outputs': ['./testoutput.npy'],
             'timestamp': datetime.now().isoformat(),
             'type': 'model',
-            'weights': {'tensorflow_saved_model_bundle': {'source': './saved_model.pb'}}
+            'weights': {
+                'tensorflow_saved_model_bundle': {
+                    'source': './',
+                    'tensorflow_version': tf.__version__
+                }
+            }
         }
 
         return yml_dict
