@@ -52,7 +52,8 @@ setup(name='n2v',
           "backports.tempfile;python_version<'3.4'",
           "csbdeep>=0.7.2,<0.8.0",
           "Pillow",
-          "ruamel.yaml>=0.16.10"
+          "ruamel.yaml>=0.16.10",
+          "bioimageio.core"
       ],
 
       extras_require={
