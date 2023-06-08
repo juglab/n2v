@@ -5,7 +5,6 @@ from enum import Enum
 import tensorflow as tf
 from zipfile import ZipFile
 from csbdeep.utils import save_json
-from bioimageio.core.build_spec import build_model
 
 from ..models.n2v_config import N2VConfig
 
@@ -124,6 +123,8 @@ def build_modelzoo(
     files: list = [],
     **kwargs,
 ):
+    from bioimageio.core.build_spec import build_model
+
     tags_dim = "3d" if len(axes) == 5 else "2d"
 
     build_model(
