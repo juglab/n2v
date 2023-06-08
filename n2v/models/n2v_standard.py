@@ -457,7 +457,7 @@ class N2V(CARE):
             authors: List[str],
             test_img: np.ndarray,
             axes: str,
-            patch_shape: Tuple[int],
+            patch_shape: Tuple[int, int],
             license: str = 'BSD-3-Clause',
             result_path: Union[Path, str] = None
     ):
