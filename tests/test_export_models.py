@@ -3,8 +3,6 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import pytest
-from bioimageio.core import load_resource_description
-from bioimageio.core.resource_tests import test_model
 
 from n2v.internals.N2V_DataGenerator import N2V_DataGenerator
 from n2v.models import N2VConfig, N2V
@@ -34,6 +32,9 @@ def temp_dir(tmp_path_factory):
 
 @pytest.mark.bioimage_io
 def test_model_build_and_export_2D_RGB(temp_dir):
+    from bioimageio.core import load_resource_description
+    from bioimageio.core.resource_tests import test_model
+
     str_dir = str(temp_dir)
     str_models = str(Path(temp_dir, "models"))
     model_name = "n2v_2D_RGB"
@@ -87,6 +88,9 @@ def test_model_build_and_export_2D_RGB(temp_dir):
 
 @pytest.mark.bioimage_io
 def test_model_build_and_export_2D_SEM(temp_dir):
+    from bioimageio.core import load_resource_description
+    from bioimageio.core.resource_tests import test_model
+
     str_dir = str(temp_dir)
     str_models = str(Path(temp_dir, "models"))
     model_name = "n2v_2D_SEM"
