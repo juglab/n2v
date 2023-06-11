@@ -1,23 +1,19 @@
-from csbdeep.models import CARE
-from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
-from csbdeep.internals import nets, predict
-from csbdeep.models.base_model import suppress_without_basedir
-from csbdeep.utils.tf import export_SavedModel, CARETensorBoardImage
-from csbdeep.version import __version__ as package_version
-
-from six import string_types
-from csbdeep.utils.six import Path, FileNotFoundError
-from csbdeep.data import PadAndCropResizer
-
-from tensorflow.keras.callbacks import TerminateOnNaN
-import tensorflow as tf
-from tensorflow.keras import backend as K
-from ruamel.yaml import YAML
-import json
-import os
 import datetime
 import warnings
-from zipfile import ZipFile
+from datetime import datetime
+from typing import Tuple, List, Dict, Union
+
+import numpy as np
+import tensorflow as tf
+from csbdeep.data import PadAndCropResizer
+from csbdeep.models import CARE
+from csbdeep.models.base_model import suppress_without_basedir
+from csbdeep.utils import _raise, axes_check_and_normalize, axes_dict, load_json, save_json
+from csbdeep.utils.six import Path, FileNotFoundError
+from csbdeep.utils.tf import CARETensorBoardImage
+from six import string_types
+from tensorflow.keras.callbacks import TerminateOnNaN
+
 from .n2v_config import N2VConfig
 from ..internals.N2V_DataWrapper import N2V_DataWrapper
 from ..internals.n2v_losses import loss_mse, loss_mae
@@ -27,12 +23,8 @@ from ..utils.n2v_utils import pm_identity, pm_normal_additive, \
     pm_uniform_withoutCP, pm_mean, pm_median, \
     tta_forward, tta_backward
 from ..nets.unet import build_single_unet_per_channel, build_unet
-
-from tifffile import imwrite
-from csbdeep.utils.six import tempfile
-import shutil
-
-import numpy as np
+from ..utils.export_utils import which_algorithm, generate_bioimage_md, build_modelzoo, \
+    Extensions, save_model_tf, get_algorithm_details
 
 
 class N2V(CARE):
@@ -411,6 +403,32 @@ class N2V(CARE):
 
         return pred
 
+    # same as predict, but input and output are converted to float64 to comply with bioimage core
+    def predict_bioimageio(self, img: np.ndarray, axes: str, eps: float = 1e-6):
+        means = np.array([float(mean) for mean in self.config.means], ndmin=len(img.shape))
+        stds = np.array([float(std) for std in self.config.stds], ndmin=len(img.shape))
+
+        img = img.astype(np.float64)
+        if 'b' in axes:
+            axes = axes.replace('b', 'S').upper()
+        new_axes = axes
+        if 'C' in axes:
+            new_axes = axes.replace('C', '') + 'C'
+            normalized = np.moveaxis(img, axes.index('C'), -1)
+            normalized = (normalized - means) / (stds + eps)
+        else:
+            normalized = img[..., np.newaxis]
+            normalized = (normalized - means) / (stds + eps)
+            normalized = normalized[..., 0]
+
+        pred = self._predict_mean_and_scale(normalized, axes=new_axes, normalizer=None, resizer=None)[0]
+        pred = pred.astype(np.float64)
+        pred = self.__denormalize__(pred, means, stds)
+        if 'C' in axes:
+            pred = np.moveaxis(pred, -1, axes.index('C'))
+
+        return pred
+
     def _set_logdir(self):
         self.logdir = self.basedir / self.name
 
@@ -432,168 +450,114 @@ class N2V(CARE):
             save_json(vars(self.config), str(config_file))
 
     @suppress_without_basedir(warn=True)
-    def export_TF(self, name, description, authors, test_img, axes, patch_shape, fname=None):
+    def export_TF(
+            self,
+            name: str,
+            description: str,
+            authors: List[str],
+            test_img: np.ndarray,
+            axes: str,
+            patch_shape: Tuple[int, int],
+            license: str = 'BSD-3-Clause',
+            result_path: Union[Path, str] = None
+    ):
         """
         name: String
             Name of the model. 
         description: String
             A short description of the model e.g. on what data it was trained.
-        authors: String
+        authors: List
             Comma seperated list of author names.
-        patch_shape: The shape of the patches used in model.train().
+        patch_shape: Tuple
+            The shape of the patches used in model.train().
+        licence: String
+            Model license, default is BSD-3-Clause
+        result_path: String
+            Path to the result folder, optional
         """
-        if fname is None:
-            fname = self.logdir / 'export.bioimage.io.zip'
-        else:
-            fname = Path(fname)
-
         input_n_dims = len(test_img.shape)
         if 'C' in axes:
             input_n_dims -= 1
-        assert input_n_dims == self.config.n_dim, 'Input and network dimensions do not match.'
-        assert test_img.shape[axes.index('X')] == test_img.shape[
-            axes.index('Y')], 'X and Y dimensions are not of same length.'
-        test_output = self.predict(test_img, axes)
-        # Extract central slice of Z-Stack
-        if 'Z' in axes:
-            z_dim = axes.index('Z')
-            if z_dim != 0:
-                test_output = np.moveaxis(test_output, z_dim, 0)
-            test_output = test_output[int(test_output.shape[0] / 2)]
+        assert input_n_dims == self.config.n_dim, \
+            'Input and network dimensions do not match.'
+        assert test_img.shape[axes.index('X')] == test_img.shape[axes.index('Y')], \
+            'X and Y dimensions are not of same length.'
 
-        # CSBDeep Export
-        meta = {
-            'type': self.__class__.__name__,
-            'version': package_version,
-            'probabilistic': self.config.probabilistic,
-            'axes': self.config.axes,
-            'axes_div_by': self._axes_div_by(self.config.axes),
-            'tile_overlap': self._axes_tile_overlap(self.config.axes),
-        }
-        export_SavedModel(self.keras_model, str(fname), meta=meta)
-        # CSBDeep Export Done
-
-        # Replace : with -
-        name = name.replace(':', ' -')
-        yml_dict = self.get_yml_dict(name, description, authors, test_img, axes, patch_shape=patch_shape)
-        yml_file = self.logdir / 'model.yaml'
-
-        '''default_flow_style must be set to TRUE in order for the output to display arrays as [x,y,z]'''
-        yaml = YAML(typ='rt')
-        yaml.default_flow_style = False
-        with open(yml_file, 'w') as outfile:
-            yaml.dump(yml_dict, outfile)
-
-        input_file = self.logdir / 'testinput.tif'
-        output_file = self.logdir / 'testoutput.tif'
-        imwrite(input_file, test_img)
-        imwrite(output_file, test_output)
-
-        with ZipFile(fname, 'a') as myzip:
-            myzip.write(yml_file, arcname=os.path.basename(yml_file))
-            myzip.write(input_file, arcname=os.path.basename(input_file))
-            myzip.write(output_file, arcname=os.path.basename(output_file))
-
-        print("\nModel exported in BioImage ModelZoo format:\n%s" % str(fname.resolve()))
-
-    def get_yml_dict(self, name, description, authors, test_img, axes, patch_shape=None):
-        if (patch_shape != None):
+        if patch_shape != None:
             self.config.patch_shape = patch_shape
 
-        ''' Repeated values to avoid reference tags of the form &id002 in yml output when the same variable is used more than
-        once in the dictionary'''
-        mean_val = []
-        mean_val1 = []
-        for ele in self.config.means:
-            mean_val.append(float(ele))
-            mean_val1.append(float(ele))
-        std_val = []
-        std_val1 = []
-        for ele in self.config.stds:
-            std_val.append(float(ele))
-            std_val1.append(float(ele))
-        in_data_range_val = ['-inf', 'inf']
-        out_data_range_val = ['-inf', 'inf']
+        if result_path is None:
+            result_path = self.logdir
+        result_path = Path(result_path).absolute()
 
-        axes_val = 'b' + self.config.axes
-        axes_val = axes_val.lower()
-        val = 2 ** self.config.unet_n_depth
-        val1 = predict.tile_overlap(self.config.unet_n_depth, self.config.unet_kern_size)
-        min_val = [1, val, val, self.config.n_channel_in]
-        step_val = [1, val, val, 0]
-        halo_val = [0, val1, val1, 0]
-        scale_val = [1, 1, 1, 1]
-        offset_val = [0, 0, 0, 0]
+        test_output = self.predict_bioimageio(test_img, axes)
 
-        yaml = YAML(typ='rt')
-        with open(self.logdir / 'config.json', 'r') as f:
-            tr_kwargs_val = yaml.load(f)
+        model_path = result_path / 'tf_model.zip'
+        config_path = result_path / 'config.json'
+        save_model_tf(
+            model=self.keras_model,
+            config=self.config,
+            config_path=config_path,
+            model_path=model_path
+        )
 
-        if (self.config.n_dim == 3):
-            min_val = [1, val, val, val, self.config.n_channel_in]
-            step_val = [1, val, val, val, 0]
-            halo_val = [0, val1, val1, val1, 0]
-            scale_val = [1, 1, 1, 1, 1]
-            offset_val = [0, 0, 0, 0, 0]
+        new_axes = axes.replace('S', 'b').lower()
+        if 'b' not in new_axes:
+            new_axes = 'b' + new_axes
+            axes = 'S' + axes
+            test_img = test_img[np.newaxis, ...]
+            test_output = test_output[np.newaxis, ...]
 
-        yml_dict = {
-            'name': name,
-            'description': description,
-            'cite': [{
-                'text': 'Krull, A. and Buchholz, T. and Jug, F. Noise2void - learning denoising from single noisy images.\nProceedings of the IEEE Conference on Computer Vision and Pattern Recognition (2019)',
-                'doi': '10.1109/CVPR.2019.00223'
-            }],
-            'authors': authors,
-            'language': 'python',
-            'framework': 'tensorflow',
-            'format_version': '0.2.0-csbdeep',
-            'source': 'n2v',
-            'test_input': 'testinput.tif',
-            'test_output': 'testoutput.tif',
-            'inputs': [{
-                'name': 'input',
-                'axes': axes_val,
-                'data_type': 'float32',
-                'data_range': in_data_range_val,
-                'halo': halo_val,
-                'shape': {
-                    'min': min_val,
-                    'step': step_val
-                }
-            }],
-            'outputs': [{
-                'name': self.keras_model.layers[-1].output.name,
-                'axes': axes_val,
-                'data_type': 'float32',
-                'data_range': out_data_range_val,
-                'shape': {
-                    'reference_input': 'input',
-                    'scale': scale_val,
-                    'offset': offset_val
-                }
-            }],
-            'training': {
-                'source': 'n2v.train()',
-                'kwargs': tr_kwargs_val
-            },
-            'prediction': {
-                'weights': {'source': './variables/variables'},
-                'preprocess': [{
-                    'kwargs': {
-                        'mean': mean_val,
-                        'stdDev': std_val
-                    }
-                }],
-                'postprocess': [{
-                    'kwargs': {
-                        'mean': mean_val1,
-                        'stdDev': std_val1
-                    }
-                }]
+        input_file = self.logdir.absolute() / 'test_input.npy'
+        np.save(input_file, test_img.astype(np.float64))
+
+        output_file = self.logdir.absolute() / 'test_output.npy'
+        np.save(output_file, test_output.astype(np.float64))
+
+        preprocessing = [{
+            'name': 'zero_mean_unit_variance',
+            'kwargs': {
+                'mode': 'fixed',
+                'axes': 'yx' if len(axes) == 4 else 'zyx',
+                'mean': [float(m) for m in self.config.means],
+                'std': [float(s) for s in self.config.stds]
             }
-        }
+        }]
+        postprocessing = [{
+            'name': 'scale_linear',
+            'kwargs': {
+                'axes': 'yx' if len(axes) == 4 else 'zyx',
+                'gain': [float(s) for s in self.config.stds],
+                'offset': [float(m) for m in self.config.means]
+            }
+        }]
+        authors = [{"name": author} for author in authors]
 
-        return yml_dict
+        algorithm = which_algorithm(self.config)
+        cite = get_algorithm_details(algorithm)
+        doc = generate_bioimage_md(name, cite, result_path)
+        files = [str(config_path.absolute()), str(model_path.absolute())]
+        result_archive_path = result_path / (result_path.stem + Extensions.BIOIMAGE_EXT.value)
+
+        build_modelzoo(
+            result_archive_path,
+            model_path,
+            result_path,
+            input_file,
+            output_file,
+            preprocessing,
+            postprocessing,
+            doc,
+            name,
+            authors,
+            algorithm,
+            tf.__version__,
+            cite,
+            new_axes,
+            files
+        )
+
+        print("\nModel exported in BioImage ModelZoo format:\n%s" % str(result_archive_path.resolve()))
 
     @property
     def _config_class(self):
