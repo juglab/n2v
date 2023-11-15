@@ -237,7 +237,7 @@ class N2V_DataGenerator():
                 if len(patches) > 1:
                     return np.stack(patches)
                 else:
-                    return np.array(patches)[np.newaxis]
+                    return np.array(patches)
             elif n_dims == 3:
                 for i in range(num_patches):
                     z, y, x = np.random.randint(0, data.shape[1] - shape[0] + 1), np.random.randint(0,
@@ -250,7 +250,7 @@ class N2V_DataGenerator():
                 if len(patches) > 1:
                     return np.stack(patches)
                 else:
-                    return np.array(patches)[np.newaxis]
+                    return np.array(patches)
             else:
                 print('Not implemented for more than 4 dimensional (ZYXC) data.')
 
