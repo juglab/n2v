@@ -1,4 +1,9 @@
-![example workflow](https://github.com/juglab/n2v/actions/workflows/test_and_deploy.yml/badge.svg)
+[![License](https://img.shields.io/pypi/l/n2v.svg?color=green)](https://github.com/juglab/n2v/blob/main/LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/n2v.svg?color=green)](https://pypi.org/project/n2v)
+[![Python Version](https://img.shields.io/pypi/pyversions/n2v.svg?color=green)](https://python.org)
+[![CI](https://github.com/juglab/n2v/actions/workflows/test_and_deploy.yml/badge.svg)](https://github.com/juglab/n2v/actions/workflows/ci.yml)
+
+
 [![N2V_video](img/n2v_vimeo.png)](https://vimeo.com/305045007)
 
 # Noise2Void - Learning Denoising from Single Noisy Images
