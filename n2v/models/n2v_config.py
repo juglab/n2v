@@ -49,6 +49,8 @@ class N2VConfig(argparse.Namespace):
         Learning rate for training. Default: ``0.0004``
     train_batch_size : int
         Batch size for training. Default: ``16``
+    train_num_gpus : int
+        how many gpus to use. Default: ``1``
     train_tensorboard : bool
         Enable TensorBoard for monitoring training progress. Default: ``True``
     train_checkpoint : str
@@ -144,6 +146,7 @@ class N2VConfig(argparse.Namespace):
             self.train_steps_per_epoch = 400
             self.train_learning_rate   = 0.0004
             self.train_batch_size      = 16
+            self.train_num_gpus        = 1
             self.train_tensorboard     = True
             self.train_checkpoint      = 'weights_best.h5'
             self.train_reduce_lr       = {'factor': 0.5, 'patience': 10}
@@ -225,6 +228,7 @@ class N2VConfig(argparse.Namespace):
         ok['train_steps_per_epoch'] = _is_int(self.train_steps_per_epoch,1)
         ok['train_learning_rate']   = np.isscalar(self.train_learning_rate) and self.train_learning_rate > 0
         ok['train_batch_size']      = _is_int(self.train_batch_size,1)
+        ok['train_num_gpus']      = _is_int(self.train_num_gpus,1)
         ok['train_tensorboard']     = isinstance(self.train_tensorboard,bool)
         ok['train_checkpoint']      = self.train_checkpoint is None or isinstance(self.train_checkpoint,string_types)
         ok['train_reduce_lr']       = self.train_reduce_lr  is None or isinstance(self.train_reduce_lr,dict)
