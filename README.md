@@ -29,7 +29,9 @@ OpenReview: [https://openreview.net/forum?id=IZfQYb4lHVq](https://openreview.net
 
 # Installation
 This implementation requires [Tensorflow](https://www.tensorflow.org/install/).
-We have tested Noise2Void using Python 3.9 and TensorFlow 2.7 and 2.10.
+We have tested Noise2Void using Python 3.9 and TensorFlow 2.7, 2.10 and 2.13. 
+
+:warning: `n2v` is not compatible with TensorFlow 2.16 :warning:
 
 Note: If you want to use TensorFlow 1.15 you have to install N2V v0.2.1. N2V v0.3.* supports TensorFlow 2 only.
 
@@ -44,19 +46,81 @@ conda create -n 'n2v' python=3.9
 conda activate n2v
 ```
 
-## Install TensorFlow
+## Install TensorFlow < 2.16
 
-The best way to install TensorFLow is to follow the [Tensorflow guidelines](https://www.tensorflow.org/install/pip). 
+Since TensorFlow 2.16, `n2v` is no longer compatible with the latest tensorflow version. Therefore we recommend installing the latest versions 
+with which it was tested. The following instructions are copied from TensorFlow website, using the [WayBack machinbe](https://web.archive.org/web/20030315000000*/https://www.tensorflow.org/install/pip).
 
-Note that, after installing TensorFlow, running the following commands in your environment will allow you to use the GPU without having to each 
-time run an `export` command (refer to the [Tensorflow step by step](https://www.tensorflow.org/install/pip#linux_1)):
-```bash
+### 2.10 (tested) - Nov 22
+
+Linux:
+```
+conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/
+python3 -m pip install tensorflow
+```
+
+macOs:
+```
+# There is currently no official GPU support for MacOS.
+python3 -m pip install tensorflow
+```
+
+Windows 
+```
+# Last supported Windows with GPU without WSL2
+conda install -c conda-forge cudatoolkit=11.2 cudnn=8.1.0
+python3 -m pip install tensorflow
+```
+
+### 2.13 (untested) - Sep 23
+
+Linux:
+``` bash
+conda install -c conda-forge cudatoolkit=11.8.0
+python3 -m pip install nvidia-cudnn-cu11==8.6.0.163 tensorflow==2.13.*
 mkdir -p $CONDA_PREFIX/etc/conda/activate.d
-echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/' > $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+echo 'CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+echo 'export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$CONDA_PREFIX/lib/:$LD_LIBRARY_PATH' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+source $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+```
+
+macOs:
+``` bash
+# There is currently no official GPU support for MacOS.
+python3 -m pip install tensorflow
+```
+
+Windows WSL2
+``` bash
+conda install -c conda-forge cudatoolkit=11.8.0
+python3 -m pip install nvidia-cudnn-cu11==8.6.0.163 tensorflow==2.13.*
+mkdir -p $CONDA_PREFIX/etc/conda/activate.d
+echo 'CUDNN_PATH=$(dirname $(python -c "import nvidia.cudnn;print(nvidia.cudnn.__file__)"))' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+echo 'export LD_LIBRARY_PATH=$CUDNN_PATH/lib:$CONDA_PREFIX/lib/:$LD_LIBRARY_PATH' >> $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+source $CONDA_PREFIX/etc/conda/activate.d/env_vars.sh
+```
+
+## 2.15 (untested) - Nov 23
+
+Linux:
+``` bash
+python3 -m pip install tensorflow[and-cuda]
+```
+
+macOs:
+``` bash
+# There is currently no official GPU support for MacOS.
+python3 -m pip install tensorflow
+```
+
+Windows WSL2
+``` bash
+python3 -m pip install tensorflow[and-cuda]
 ```
 
 ## Option 1: PIP (current stable release)
-```
+``` bash
 $ pip install n2v
 ```
 
