@@ -1,3 +1,10 @@
+> [!WARNING]
+> After years of success, we are slowly dropping support for the `n2v` package. But no panic, we are providing you with an alternative: [CAREamics](https://careamics.github.io/)! The reason is that most of the recent development in the field happens in PyTorch, and maintaining TensorFlow code has become cumbersome. CAREamics is meant to be a modern and user-oriented library that allows you to run a variety of algorithms, from Noise2Void to more recent advances, and comes with a napari plugin.
+> 
+> Join us there and open issues if you run into trouble!
+
+
+
 [![License](https://img.shields.io/pypi/l/n2v.svg?color=green)](https://github.com/juglab/n2v/blob/main/LICENSE)
 [![PyPI](https://img.shields.io/pypi/v/n2v.svg?color=green)](https://pypi.org/project/n2v)
 [![Python Version](https://img.shields.io/pypi/pyversions/n2v.svg?color=green)](https://python.org)
